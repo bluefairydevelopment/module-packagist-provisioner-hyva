@@ -1,0 +1,111 @@
+<?php declare(strict_types=1);
+
+use BlueFairy\PackagistProvisionerHyva\ViewModel\LicenceListViewModel;
+use BlueFairy\PackagistProvisioner\Api\Data\LicenceInterface;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+
+/**
+ * BlueFairy - PackagistProvisionerHyva
+ *
+ * My Account — My Extensions tab.
+ *
+ * Copyright © 2026 Blue Fairy Development. All rights reserved.
+ *
+ * @var LicenceListViewModel $viewModel
+ * @var Template $block
+ * @var Escaper $escaper
+ */
+
+$viewModel = $block->getData('view_model');
+$licences = $viewModel->getLicences();
+?>
+<div class="block block-dashboard-info">
+    <div class="block-title">
+        <strong><?= $escaper->escapeHtml(__('My Extensions')) ?></strong>
+    </div>
+    <div class="block-content">
+        <?php if (empty($licences)): ?>
+            <p class="message info"><?= $escaper->escapeHtml(__('You have no purchased extensions.')) ?></p>
+        <?php else: ?>
+            <div class="space-y-6">
+                <?php foreach ($licences as $entry):
+                    /** @var LicenceInterface $licence */
+                    $licence = $entry['licence'];
+                    $token = $entry['decrypted_token'];
+                    $isActive = $viewModel->isActive($licence);
+                ?>
+                    <div
+                        class="border border-gray-200 rounded p-4 <?= $isActive ? '' : 'opacity-60' ?>"
+                        x-data="{
+                            tokenVisible: false,
+                            copied: false,
+                            copyText(text) {
+                                if (navigator.clipboard) {
+                                    navigator.clipboard.writeText(text).then(() => { this.copied = true; setTimeout(() => this.copied = false, 2000); });
+                                }
+                            }
+                        }"
+                    >
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="font-mono text-sm font-semibold"><?= $escaper->escapeHtml($licence->getPackageName()) ?></span>
+                            <?php if ($isActive): ?>
+                                <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                                    <?= $escaper->escapeHtml(__('Active')) ?>
+                                    <?php if ($licence->getExpiresAt()): ?>
+                                        &middot; <?= $escaper->escapeHtml(__('Expires %1', $licence->getExpiresAt())) ?>
+                                    <?php else: ?>
+                                        &middot; <?= $escaper->escapeHtml(__('Lifetime')) ?>
+                                    <?php endif; ?>
+                                </span>
+                            <?php elseif ($viewModel->isExpired($licence)): ?>
+                                <span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded"><?= $escaper->escapeHtml(__('Expired')) ?></span>
+                            <?php elseif ($viewModel->isRevoked($licence)): ?>
+                                <span class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded"><?= $escaper->escapeHtml(__('Revoked')) ?></span>
+                            <?php elseif ($viewModel->isFailed($licence)): ?>
+                                <span class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded"><?= $escaper->escapeHtml(__('Failed')) ?></span>
+                            <?php elseif ($viewModel->isPending($licence)): ?>
+                                <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded"><?= $escaper->escapeHtml(__('Pending')) ?></span>
+                            <?php endif; ?>
+                        </div>
+
+                        <?php if ($isActive && $licence->getRepoUrl() && $token): ?>
+                            <div class="space-y-2 mt-3">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs text-gray-500 w-24 shrink-0"><?= $escaper->escapeHtml(__('Repository')) ?></span>
+                                    <code class="text-xs bg-gray-100 px-2 py-1 rounded flex-1 truncate"><?= $escaper->escapeHtml((string)$licence->getRepoUrl()) ?></code>
+                                    <button @click="copyText('<?= $escaper->escapeJs((string)$licence->getRepoUrl()) ?>')" class="text-xs text-blue-600 hover:underline shrink-0"><?= $escaper->escapeHtml(__('Copy')) ?></button>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs text-gray-500 w-24 shrink-0"><?= $escaper->escapeHtml(__('Token')) ?></span>
+                                    <code class="text-xs bg-gray-100 px-2 py-1 rounded flex-1 truncate" x-text="tokenVisible ? '<?= $escaper->escapeJs($token) ?>' : '●●●●●●●●●●●●●●●●●●●●'"></code>
+                                    <button @click="tokenVisible = !tokenVisible" class="text-xs text-blue-600 hover:underline shrink-0" x-text="tokenVisible ? '<?= $escaper->escapeJs(__('Hide')->render()) ?>' : '<?= $escaper->escapeJs(__('Reveal')->render()) ?>'"></button>
+                                    <button @click="copyText('<?= $escaper->escapeJs($token) ?>')" class="text-xs text-blue-600 hover:underline shrink-0" x-show="tokenVisible"><?= $escaper->escapeHtml(__('Copy')) ?></button>
+                                </div>
+                                <p x-show="copied" class="text-xs text-green-600"><?= $escaper->escapeHtml(__('Copied!')) ?></p>
+                                <p class="text-xs text-gray-500 mt-1">
+                                    <?= $escaper->escapeHtml(__('Downloads: %1', $licence->getDownloadCount())) ?>
+                                    <?php if ($licence->getLastUsedAt()): ?>
+                                        &middot; <?= $escaper->escapeHtml(__('Last used: %1', $licence->getLastUsedAt())) ?>
+                                    <?php endif; ?>
+                                </p>
+                            </div>
+                        <?php elseif ($viewModel->isFailed($licence)): ?>
+                            <p class="text-sm text-red-700 mt-2">
+                                <?= $escaper->escapeHtml(__('Credentials unavailable — contact support@bluefairydevelopment.com with Order #%1.', $licence->getOrderId())) ?>
+                            </p>
+                        <?php elseif ($viewModel->isPending($licence)): ?>
+                            <p class="text-sm text-blue-700 mt-2">
+                                <?= $escaper->escapeHtml(__('Your credentials are being prepared. This usually takes less than 2 minutes.')) ?>
+                            </p>
+                        <?php elseif ($viewModel->isExpired($licence) || $viewModel->isRevoked($licence)): ?>
+                            <p class="text-sm text-gray-500 mt-2">
+                                <?= $escaper->escapeHtml(__('This licence is no longer active. Purchase a renewal to restore access.')) ?>
+                            </p>
+                        <?php endif; ?>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+    </div>
+</div>

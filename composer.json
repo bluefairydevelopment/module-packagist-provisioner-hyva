@@ -1,0 +1,21 @@
+{
+    "name": "bluefairy/module-packagist-provisioner-hyva",
+    "version": "1.0.0",
+    "description": "Hyvä theme frontend for BlueFairy_PackagistProvisioner — My Extensions tab and order credentials block",
+    "type": "magento2-module",
+    "license": "proprietary",
+    "require": {
+        "php": ">=8.1",
+        "magento/framework": "^103.0 || ^104.0",
+        "bluefairy/module-packagist-provisioner": "^1.0",
+        "hyva-themes/magento2-theme-module": "*"
+    },
+    "autoload": {
+        "files": [
+            "registration.php"
+        ],
+        "psr-4": {
+            "BlueFairy\\PackagistProvisionerHyva\\": ""
+        }
+    }
+}

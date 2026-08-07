@@ -1,0 +1,101 @@
+<?php declare(strict_types=1);
+
+use BlueFairy\PackagistProvisionerHyva\ViewModel\GuestLookupViewModel;
+use BlueFairy\PackagistProvisioner\Api\Data\LicenceInterface;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+
+/**
+ * BlueFairy - PackagistProvisionerHyva
+ *
+ * Guest credential lookup page.
+ *
+ * Copyright © 2026 Blue Fairy Development. All rights reserved.
+ *
+ * @var GuestLookupViewModel $viewModel
+ * @var Template $block
+ * @var Escaper $escaper
+ */
+
+$viewModel = $block->getData('view_model');
+$formKey = $block->getData('form_key');
+?>
+<div class="page-title-wrapper">
+    <h1 class="page-title"><?= $escaper->escapeHtml(__('Retrieve Extension Credentials')) ?></h1>
+</div>
+
+<div
+    x-data="{
+        orderNumber: '',
+        email: '',
+        loading: false,
+        result: null,
+        error: '',
+        tokenVisible: {},
+        async lookup() {
+            this.loading = true;
+            this.result = null;
+            this.error = '';
+            const resp = await fetch('<?= $escaper->escapeJs($block->getUrl('bluefairy/packagist/guestLookupPost')) ?>', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                body: JSON.stringify({ order_number: this.orderNumber, email: this.email, form_key: '<?= $escaper->escapeJs($formKey ?? '') ?>' })
+            });
+            const data = await resp.json();
+            this.loading = false;
+            if (data.success) { this.result = data.licences; }
+            else { this.error = data.error || '<?= $escaper->escapeJs(__('An error occurred.')->render()) ?>'; }
+        },
+        copy(text) { if(navigator.clipboard) navigator.clipboard.writeText(text); }
+    }"
+    class="max-w-xl mx-auto"
+>
+    <p class="mb-4 text-gray-600"><?= $escaper->escapeHtml(__('Enter your order number and email address to retrieve your Composer credentials.')) ?></p>
+
+    <form @submit.prevent="lookup" class="space-y-4">
+        <div>
+            <label class="block text-sm font-medium"><?= $escaper->escapeHtml(__('Order Number')) ?></label>
+            <input type="text" x-model="orderNumber" required class="form-control w-full mt-1" placeholder="000000001"/>
+        </div>
+        <div>
+            <label class="block text-sm font-medium"><?= $escaper->escapeHtml(__('Order Email Address')) ?></label>
+            <input type="email" x-model="email" required class="form-control w-full mt-1"/>
+        </div>
+        <button type="submit" :disabled="loading" class="btn btn-primary w-full">
+            <span x-show="!loading"><?= $escaper->escapeHtml(__('Retrieve Credentials')) ?></span>
+            <span x-show="loading"><?= $escaper->escapeHtml(__('Looking up...')) ?></span>
+        </button>
+    </form>
+
+    <div x-show="error" class="mt-4 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm" x-text="error"></div>
+
+    <template x-if="result && result.length > 0">
+        <div class="mt-6 space-y-4">
+            <template x-for="(entry, idx) in result" :key="idx">
+                <div class="border border-gray-200 rounded p-4" x-data="{ tokenVisible: false }">
+                    <p class="font-mono text-sm font-semibold" x-text="entry.package_name"></p>
+                    <template x-if="entry.status === 'ACTIVE' && entry.repo_url">
+                        <div class="space-y-2 mt-2">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs text-gray-500 w-20 shrink-0"><?= $escaper->escapeHtml(__('Repository')) ?></span>
+                                <code class="text-xs bg-gray-100 px-2 py-1 rounded flex-1 truncate" x-text="entry.repo_url"></code>
+                                <button @click="copy(entry.repo_url)" class="text-xs text-blue-600 hover:underline"><?= $escaper->escapeHtml(__('Copy')) ?></button>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs text-gray-500 w-20 shrink-0"><?= $escaper->escapeHtml(__('Token')) ?></span>
+                                <code class="text-xs bg-gray-100 px-2 py-1 rounded flex-1 truncate" x-text="tokenVisible ? entry.decrypted_token : '●●●●●●●●●●●●●●●●'"></code>
+                                <button @click="tokenVisible=!tokenVisible" class="text-xs text-blue-600 hover:underline" x-text="tokenVisible ? '<?= $escaper->escapeJs(__('Hide')->render()) ?>' : '<?= $escaper->escapeJs(__('Reveal')->render()) ?>'"></button>
+                            </div>
+                        </div>
+                    </template>
+                    <template x-if="entry.status === 'PENDING'">
+                        <p class="text-sm text-blue-700 mt-2"><?= $escaper->escapeHtml(__('Your credentials are being prepared. Please check back shortly.')) ?></p>
+                    </template>
+                    <template x-if="entry.status === 'FAILED'">
+                        <p class="text-sm text-red-700 mt-2"><?= $escaper->escapeHtml(__('Credentials unavailable. Contact support@bluefairydevelopment.com with your order number.')) ?></p>
+                    </template>
+                </div>
+            </template>
+        </div>
+    </template>
+</div>
