@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+#
+# Rejects pushes that don't include an update to CHANGELOG.md.
+# Covers both existing remote refs and first-time branch pushes.
+
+z40=0000000000000000000000000000000000000000
+has_commits=false
+changelog_updated=false
+
+while read local_ref local_sha remote_ref remote_sha; do
+    # Skip branch deletions
+    [ "$local_sha" = "$z40" ] && continue
+    has_commits=true
+
+    if [ "$remote_sha" = "$z40" ]; then
+        # New remote ref: inspect commits not yet on any remote branch
+        new_commits=$(git log --format="%H" "$local_sha" --not --remotes 2>/dev/null)
+        if [ -n "$new_commits" ]; then
+            changed=$(echo "$new_commits" | xargs git diff-tree --no-commit-id -r --name-only | sort -u)
+        else
+            changed=""
+        fi
+    else
+        changed=$(git diff --name-only "$remote_sha" "$local_sha")
+    fi
+
+    if echo "$changed" | grep -q "^CHANGELOG.md$"; then
+        changelog_updated=true
+    fi
+done
+
+if $has_commits && ! $changelog_updated; then
+    echo "" >&2
+    echo "  Push rejected: CHANGELOG.md has not been updated." >&2
+    echo "  Add an entry to CHANGELOG.md and commit it before pushing." >&2
+    echo "" >&2
+    exit 1
+fi
+
+exit 0
