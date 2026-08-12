@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.0] - 2026-08-12
 
+### Changed
+- Remove hardcoded version field from composer.json — version comes from git tag
+
 ### Added
 - Initial release: Hyvä theme frontend for `BlueFairy_PackagistProvisioner`
 - My Extensions block on customer account dashboard (shows active licences with status badges)
