@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- `Test/` is now `export-ignore`d, so the distributed archive no longer carries
+  the test estate into a merchant's `vendor/`. The tests stay in the repository
+  and in the gates. The attribute lives at the package root because `git archive`
+  reads `.gitattributes` from inside the tree it archives.
+
 ## [1.0.0] - 2026-08-12
 
 ### Changed
