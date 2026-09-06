@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © 2026 Blue Fairy Development. All rights reserved.
+ *
+ * THE FILENAME IS THE HANDLE, AND THIS FILE HAD THE WRONG ONE.
+ *
+ * It was named bluefairy_packagist_guestlookup_index.xml. Magento builds a
+ * layout handle as <route-id>_<controller>_<action>, and this page is route
+ * bluefairy_packagist, controller Packagist, action GuestLookup - so the handle
+ * is bluefairy_packagist_packagist_guestlookup. Nothing ever dispatched the old
+ * name, so this file was inert and the Hyva template it points at had never
+ * rendered on any store.
+ *
+ * What a Hyva shopper actually got was the BASE package's Luma template, which
+ * declares the correct handle and whose block this now overrides. The page
+ * looked fine - a heading, a form - which is why nobody noticed: the tell was
+ * the heading text ("Retrieve Your Packagist Credentials", Luma) rather than
+ * this template's ("Retrieve Extension Credentials").
+ *
+ * referenceBlock, not a second block: the base module already puts
+ * bluefairy.packagist.guestlookup in content, and adding another would render
+ * two lookup forms on one page.
+ */
+-->
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <body>
+        <referenceBlock name="bluefairy.packagist.guestlookup"
+                        template="BlueFairy_PackagistProvisionerHyva::packagist/guest_lookup.phtml">
+            <arguments>
+                <argument name="view_model" xsi:type="object">BlueFairy\PackagistProvisionerHyva\ViewModel\GuestLookupViewModel</argument>
+            </arguments>
+        </referenceBlock>
+    </body>
+</page>
