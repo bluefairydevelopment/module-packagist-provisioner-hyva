@@ -8,6 +8,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **The guest credential-lookup page had never rendered this package's
+  template.** Its layout file was named `bluefairy_packagist_guestlookup_index.xml`,
+  but Magento builds a layout handle as `<route-id>_<controller>_<action>` — so
+  the handle for this page is `bluefairy_packagist_packagist_guestlookup`.
+  Nothing ever dispatched the old name, and the file was inert.
+
+  What a Hyvä shopper actually saw was the base package's **Luma** template,
+  which declares the correct handle. The page looked fine, which is why nobody
+  noticed; the tell was the heading — "Retrieve Your Packagist Credentials"
+  rather than "Retrieve Extension Credentials". Measured before and after:
+  Hyvä heading 0 → 1, Luma heading 1 → 0, the Alpine form's `orderNumber`
+  binding 0 → 3.
+
+  It overrides the base block rather than adding a second one, which would have
+  rendered two lookup forms on one page.
+
+### Fixed
 - The module was not registered with Hyvä's Tailwind build, so every utility
   class appearing ONLY in this module's templates was purged from the compiled
   theme CSS. Hyvä does not scan module directories: the theme declares explicit
