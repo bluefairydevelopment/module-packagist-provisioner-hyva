@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © 2026 Blue Fairy Development. All rights reserved.
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Event/etc/events.xsd">
+    <!--
+        Registers view/frontend/tailwind with Hyvä's config generator so the
+        theme's Tailwind build scans this module's templates. Without it every
+        utility class that appears ONLY in extensions.phtml, credentials.phtml
+        or guest_lookup.phtml is purged from the theme's compiled CSS, and the
+        element renders as though the class had never been written - silently,
+        with no console error and no 404.
+    -->
+    <event name="hyva_config_generate_before">
+        <observer name="BlueFairy_PackagistProvisionerHyva" instance="BlueFairy\PackagistProvisionerHyva\Observer\RegisterModuleForHyvaConfig"/>
+    </event>
+</config>

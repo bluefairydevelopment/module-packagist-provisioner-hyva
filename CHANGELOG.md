@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- The module was not registered with Hyvä's Tailwind build, so every utility
+  class appearing ONLY in this module's templates was purged from the compiled
+  theme CSS. Hyvä does not scan module directories: the theme declares explicit
+  `@source` globs and `generated/hyva-source.css` lists only the modules named
+  in `app/etc/hyva-themes.json`, which a module joins by observing
+  `hyva_config_generate_before`. Measured on the local Hyvä theme, before and
+  after: **10 utilities went from absent to present** in `web/css/styles.css` —
+  `bg-blue-100`, `bg-green-100`, `bg-yellow-100`, `text-blue-600`,
+  `text-blue-700`, `text-blue-800`, `text-green-600`, `text-green-800`,
+  `text-yellow-800`, `w-24`. Those are the colour-coded licence status badges
+  and the token column width, so the status colours were rendering as plain
+  text on every Hyvä store this module has ever been installed on. There is no
+  console error and no 404 when this happens; the class simply does nothing.
+
+  **Installing the fix is not sufficient on its own.** The observer only puts
+  the module into the generator's INPUT. Per install, after deploying:
+
+  ```
+  bin/magento cache:flush
+  bin/magento hyva:config:generate
+  cd <theme>/web/tailwind && npm ci && npm run build   # NOT build-prod
+  bin/magento cache:flush
+  ```
+
+  The FIRST `cache:flush` is load-bearing and is the step most easily skipped.
+  Event configuration is served from the `config` cache, and `hyva:config:generate`
+  spawns its own object manager that reads it. Until that cache is flushed the
+  new observer is invisible to the command, which then rewrites
+  `hyva-themes.json` WITHOUT this module and still exits 0 — indistinguishable
+  from the fix not working. `cache:clean config` was measured to be insufficient;
+  `cache:flush` was sufficient.
+
 ### Changed
 - `Test/` is now `export-ignore`d, so the distributed archive no longer carries
   the test estate into a merchant's `vendor/`. The tests stay in the repository

@@ -1,0 +1,10 @@
+/*
+ * Copyright © 2026 Blue Fairy Development. All rights reserved.
+ *
+ * Hyvä 1.4+ (Tailwind 4): "hyva-sources" imports this file INSTEAD OF scanning
+ * the module directory, so the sources must be named here or every utility
+ * unique to this module's templates is purged from the theme build.
+ * Regenerate after installing or upgrading:
+ *   bin/magento hyva:config:generate && (cd <theme>/web/tailwind && npm run build)
+ */
+@source "../templates/**/*.phtml";
