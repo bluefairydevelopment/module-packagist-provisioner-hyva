@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **This package's layout applied on EVERY theme, not just Hyvä.** None of its
+  six layout files carried the `hyva_` prefix, so Magento loaded them on a Luma
+  store view as well — and a Luma shopper was served Alpine templates on a page
+  with **no Alpine loaded at all**, with inputs carrying `x-model` and no `name`
+  attribute, and a call to `hyva.getFormKey()` that is undefined outside Hyvä.
+  The guest lookup could not have worked there under any circumstances.
+
+  Hyvä adds `hyva_`-prefixed layout handles only when the current theme is a
+  Hyvä theme (`Hyva\Theme\Observer\AddLayoutHandles`; its own integration test
+  for the negative case is named `unchanged_if_not_hyva_theme`). Every layout
+  file here is renamed accordingly:
+
+  | was | now |
+  | :--- | :--- |
+  | `bluefairy_packagist_packagist_guestlookup.xml` | `hyva_bluefairy_packagist_packagist_guestlookup.xml` |
+  | `customer_account.xml` | `hyva_customer_account.xml` |
+  | `customer_account_index.xml` | `hyva_customer_account_index.xml` |
+  | `customer_account_licences.xml` | `hyva_customer_account_licences.xml` |
+  | `customer_account_verify.xml` | `hyva_customer_account_verify.xml` |
+  | `sales_order_view.xml` | `hyva_sales_order_view.xml` |
+
+  Measured on a rig carrying both themes: on the Luma store view the guest page
+  went from the Hyvä template with 0 `name="order_number"` fields and a dead
+  Alpine binding, to the base package's Luma template with a working form; the
+  Hyvä store view is unchanged. This was only visible because a second theme was
+  finally walked — a Hyvä-only rig cannot see it, and it had been true since the
+  package's first release.
+
 ### Added
 - **Hyvä templates for `/customer/account/licences` and
   `/customer/account/verify`** (M2MAP-242). This package supplied templates for
