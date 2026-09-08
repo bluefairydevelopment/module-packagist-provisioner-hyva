@@ -7,6 +7,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- **The Packagist token is no longer shown without password re-entry**
+  (M2MAP-260). The base package refuses to release a token until the customer
+  re-authenticates — `Controller/Account/Licences.php` redirects unless
+  `StepUpSession::isVerified()`. This companion showed the same decrypted token
+  with **no gate at all**, on two pages the base package places no block on:
+
+  - the customer account **dashboard** (`hyva_customer_account_index.xml` →
+    `LicenceListViewModel`), and
+  - the **order view** (`hyva_sales_order_view.xml` → `OrderLicenceViewModel`).
+
+  So one product enforced two different trust boundaries for one value
+  depending only on which theme the merchant had chosen — and the companion our
+  own README recommends for a Hyvä store was the ungated one. Anyone holding a
+  live customer session could read the plaintext credential.
+
+  **It was worse than "a Reveal button with no gate".** Both templates printed
+  the plaintext into the HTML and used Alpine solely to toggle its *visibility*
+  (`x-text="tokenVisible ? '<token>' : '●●●●'"`). Reveal was never a server
+  round trip, so the token was in view-source whether or not anyone pressed it.
+
+  The gate is therefore applied **before decryption, not before display**: both
+  view models now take `StepUpSession` and never produce the plaintext at all
+  unless the customer has verified. The licence is still listed — the gate hides
+  the credential, not the fact that the customer owns the extension — and the
+  templates now link to the gated licences page instead of rendering an empty
+  panel.
+
+  Not changed: the base package's `customer_account_licences` handle, which was
+  already gated and is fed by the base's own `LicencesViewModel`.
+
+  Verified by running the product, not only by the suite. On the rig, before the
+  cure, `/customer/account/` carried `LOCAL-RIG-TOKEN-0001` for a customer who
+  had not re-entered their password; after it, the token is absent before
+  verification and present after. Mutation: neutering the gate in both view
+  models turned exactly the two `testAnUnverifiedCustomerIsNeverHandedAToken`
+  cases red and nothing else.
+
+  **A trap worth recording, because it nearly signed this off.** The first
+  version of the walkthrough assertion was
+  `expect(html).not.toContain('LOCAL-RIG-TOKEN-0001')` — and it **passed against
+  the leaking code**. Magento's `Escaper::escapeJs()` rewrites every
+  non-alphanumeric character as `\uXXXX`, so the token reaches the HTML as
+  `LOCAL\u002DRIG\u002DTOKEN\u002D0001` and the assertion of absence could
+  never have failed. Only the positive control beneath it — "and the token IS
+  there after verifying" — went red and exposed the blind check. The spec now
+  decodes the escapes before asserting.
+
+
 ### Changed
 - **The Hyvä requirement is `^1.1.15` instead of `*`** (M2MAP-252). The floor is
   measured, not guessed — a guessed floor refuses installs that work, which is

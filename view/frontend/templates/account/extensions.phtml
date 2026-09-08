@@ -69,7 +69,17 @@ $licences = $viewModel->getLicences();
                             <?php endif; ?>
                         </div>
 
-                        <?php if ($isActive && $licence->getRepoUrl() && $token): ?>
+                        <?php if ($isActive && !$viewModel->isStepUpVerified()): ?>
+                            <?php /* M2MAP-260: the token is not decrypted at all until the
+                               customer re-enters their password, so there is nothing to
+                               reveal here. Send them to the gated page, which redirects to
+                               the verify form and returns them to their credentials. */ ?>
+                            <div class="mt-3 text-sm">
+                                <p class="text-gray-600"><?= $escaper->escapeHtml(__('Your credentials are hidden until you confirm your password.')) ?></p>
+                                <a href="<?= $escaper->escapeUrl($block->getUrl('customer/account/licences')) ?>"
+                                   class="text-blue-600 hover:underline"><?= $escaper->escapeHtml(__('Verify to view credentials')) ?></a>
+                            </div>
+                        <?php elseif ($isActive && $licence->getRepoUrl() && $token): ?>
                             <div class="space-y-2 mt-3">
                                 <div class="flex items-center gap-2">
                                     <span class="text-xs text-gray-500 w-24 shrink-0"><?= $escaper->escapeHtml(__('Repository')) ?></span>

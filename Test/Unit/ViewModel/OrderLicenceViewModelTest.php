@@ -10,6 +10,7 @@ namespace BlueFairy\PackagistProvisionerHyva\Test\Unit\ViewModel;
 
 use BlueFairy\PackagistProvisioner\Api\Data\LicenceInterface;
 use BlueFairy\PackagistProvisioner\Api\LicenceRepositoryInterface;
+use BlueFairy\PackagistProvisioner\Model\Auth\StepUpSession;
 use BlueFairy\PackagistProvisionerHyva\ViewModel\OrderLicenceViewModel;
 use Magento\Framework\Encryption\EncryptorInterface;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -25,6 +26,8 @@ class OrderLicenceViewModelTest extends TestCase
     private $licenceRepository;
     /** @var EncryptorInterface&MockObject */
     private $encryptor;
+    /** @var StepUpSession&MockObject */
+    private $stepUpSession;
 
     private OrderLicenceViewModel $viewModel;
 
@@ -32,10 +35,15 @@ class OrderLicenceViewModelTest extends TestCase
     {
         $this->licenceRepository = $this->createMock(LicenceRepositoryInterface::class);
         $this->encryptor         = $this->createMock(EncryptorInterface::class);
+        $this->stepUpSession     = $this->createMock(StepUpSession::class);
+
+        // Verified by default - see the note in LicenceListViewModelTest.
+        $this->stepUpSession->method('isVerified')->willReturn(true);
 
         $this->viewModel = new OrderLicenceViewModel(
             $this->licenceRepository,
-            $this->encryptor
+            $this->encryptor,
+            $this->stepUpSession
         );
     }
 
@@ -117,6 +125,53 @@ class OrderLicenceViewModelTest extends TestCase
             self::assertStringContainsString('4242', $message);
             self::assertStringContainsString('support@bluefairydevelopment.com', $message);
         }
+    }
+
+    /**
+     * M2MAP-260. The order view was the SECOND ungated route to the same value:
+     * knowing an order id and holding a live session was enough. The base
+     * package places no block on this handle at all, so this surface existed
+     * only in the Hyvä companion and only without the gate.
+     */
+    public function testAnUnverifiedCustomerIsNeverHandedAToken(): void
+    {
+        $viewModel = $this->viewModelWithStepUp(false);
+        $this->licenceRepository->method('getByOrderId')
+            ->willReturn([$this->licence(LicenceInterface::STATUS_ACTIVE, 'ciphertext')]);
+
+        $this->encryptor->expects(self::never())->method('decrypt');
+
+        $result = $viewModel->getLicencesForOrder(7);
+
+        self::assertCount(1, $result);
+        self::assertSame('', $result[0]['decrypted_token']);
+        self::assertFalse($viewModel->isStepUpVerified());
+    }
+
+    /**
+     * The positive control: the empty string above is the gate, not a broken
+     * view model.
+     */
+    public function testAVerifiedCustomerIsHandedThePlaintext(): void
+    {
+        $viewModel = $this->viewModelWithStepUp(true);
+        $this->licenceRepository->method('getByOrderId')
+            ->willReturn([$this->licence(LicenceInterface::STATUS_ACTIVE, 'ciphertext')]);
+        $this->encryptor->expects(self::once())->method('decrypt')->with('ciphertext')->willReturn('PLAINTEXT');
+
+        self::assertSame('PLAINTEXT', $viewModel->getLicencesForOrder(7)[0]['decrypted_token']);
+    }
+
+    private function viewModelWithStepUp(bool $verified): OrderLicenceViewModel
+    {
+        $stepUp = $this->createMock(StepUpSession::class);
+        $stepUp->method('isVerified')->willReturn($verified);
+
+        return new OrderLicenceViewModel(
+            $this->licenceRepository,
+            $this->encryptor,
+            $stepUp
+        );
     }
 
     private function licence(string $status, ?string $token): LicenceInterface

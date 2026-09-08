@@ -10,6 +10,7 @@ namespace BlueFairy\PackagistProvisionerHyva\ViewModel;
 
 use BlueFairy\PackagistProvisioner\Api\Data\LicenceInterface;
 use BlueFairy\PackagistProvisioner\Api\LicenceRepositoryInterface;
+use BlueFairy\PackagistProvisioner\Model\Auth\StepUpSession;
 use Magento\Framework\Encryption\EncryptorInterface;
 use Magento\Framework\View\Element\Block\ArgumentInterface;
 
@@ -18,11 +19,23 @@ class OrderLicenceViewModel implements ArgumentInterface
     /**
      * @param LicenceRepositoryInterface $licenceRepository
      * @param EncryptorInterface $encryptor
+     * @param StepUpSession $stepUpSession
      */
     public function __construct(
         private readonly LicenceRepositoryInterface $licenceRepository,
-        private readonly EncryptorInterface $encryptor
+        private readonly EncryptorInterface $encryptor,
+        // M2MAP-260, as on LicenceListViewModel. The order view is the second
+        // ungated route to the same value.
+        private readonly StepUpSession $stepUpSession
     ) {
+    }
+
+    /**
+     * @return bool
+     */
+    public function isStepUpVerified(): bool
+    {
+        return $this->stepUpSession->isVerified();
     }
 
     /**
@@ -31,12 +44,17 @@ class OrderLicenceViewModel implements ArgumentInterface
      */
     public function getLicencesForOrder(int $orderId): array
     {
+        $verified = $this->isStepUpVerified();
+
         $licences = $this->licenceRepository->getByOrderId($orderId);
         $result = [];
 
         foreach ($licences as $licence) {
             $decryptedToken = '';
-            if ($licence->getStatus() === LicenceInterface::STATUS_ACTIVE && $licence->getToken() !== null) {
+            // Gated before decryption, not before display - see the note on
+            // LicenceListViewModel::getLicences().
+            $isActive = $licence->getStatus() === LicenceInterface::STATUS_ACTIVE;
+            if ($verified && $isActive && $licence->getToken() !== null) {
                 try {
                     $decryptedToken = $this->encryptor->decrypt($licence->getToken());
                 } catch (\Exception) {

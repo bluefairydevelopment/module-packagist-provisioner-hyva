@@ -10,6 +10,7 @@ namespace BlueFairy\PackagistProvisionerHyva\Test\Unit\ViewModel;
 
 use BlueFairy\PackagistProvisioner\Api\Data\LicenceInterface;
 use BlueFairy\PackagistProvisioner\Api\LicenceRepositoryInterface;
+use BlueFairy\PackagistProvisioner\Model\Auth\StepUpSession;
 use BlueFairy\PackagistProvisionerHyva\ViewModel\LicenceListViewModel;
 use Magento\Customer\Model\Session;
 use Magento\Framework\Encryption\EncryptorInterface;
@@ -29,6 +30,8 @@ class LicenceListViewModelTest extends TestCase
     private $licenceRepository;
     /** @var EncryptorInterface&MockObject */
     private $encryptor;
+    /** @var StepUpSession&MockObject */
+    private $stepUpSession;
 
     private LicenceListViewModel $viewModel;
 
@@ -37,11 +40,18 @@ class LicenceListViewModelTest extends TestCase
         $this->customerSession   = $this->createMock(Session::class);
         $this->licenceRepository = $this->createMock(LicenceRepositoryInterface::class);
         $this->encryptor         = $this->createMock(EncryptorInterface::class);
+        $this->stepUpSession     = $this->createMock(StepUpSession::class);
+
+        // The default here is the VERIFIED customer, so that every case below
+        // reads as a statement about status handling rather than about the gate.
+        // The gate has its own cases, and they set this explicitly.
+        $this->stepUpSession->method('isVerified')->willReturn(true);
 
         $this->viewModel = new LicenceListViewModel(
             $this->customerSession,
             $this->licenceRepository,
-            $this->encryptor
+            $this->encryptor,
+            $this->stepUpSession
         );
     }
 
@@ -156,6 +166,81 @@ class LicenceListViewModelTest extends TestCase
     /**
      * @param array<int, LicenceInterface> $licences
      */
+    /**
+     * M2MAP-260, the CRITICAL this gate exists for. The base package will not
+     * show a token until the customer re-enters their password; this block sits
+     * on the account dashboard, which is not behind that controller.
+     *
+     * The assertion that matters is `never decrypt` rather than `the string is
+     * empty`. Both templates put the plaintext into the HTML and use Alpine
+     * only to toggle its visibility, so a token that is decrypted here reaches
+     * view-source whether or not anyone presses Reveal. Asserting only on the
+     * returned value would still pass if the plaintext were produced and then
+     * dropped somewhere else.
+     */
+    public function testAnUnverifiedCustomerIsNeverHandedAToken(): void
+    {
+        $viewModel = $this->viewModelWithStepUp(false);
+        $this->customerSession->method('getCustomerId')->willReturn(15506);
+        $this->licenceRepository->method('getByCustomerId')
+            ->willReturn([$this->licence(LicenceInterface::STATUS_ACTIVE, 'ciphertext')]);
+
+        $this->encryptor->expects(self::never())->method('decrypt');
+
+        $result = $viewModel->getLicences();
+
+        self::assertSame('', $result[0]['decrypted_token']);
+        self::assertFalse($viewModel->isStepUpVerified());
+    }
+
+    /**
+     * The licence itself is still listed - the gate hides the credential, not
+     * the fact that the customer owns the extension. Without this, the cure
+     * would read as "the dashboard block disappeared".
+     */
+    public function testAnUnverifiedCustomerStillSeesWhichExtensionsTheyOwn(): void
+    {
+        $viewModel = $this->viewModelWithStepUp(false);
+        $this->customerSession->method('getCustomerId')->willReturn(15506);
+        $this->licenceRepository->method('getByCustomerId')
+            ->willReturn([$this->licence(LicenceInterface::STATUS_ACTIVE, 'ciphertext')]);
+
+        $result = $viewModel->getLicences();
+
+        self::assertCount(1, $result);
+        self::assertSame('bluefairy/module-mailchimp', $result[0]['licence']->getPackageName());
+    }
+
+    /**
+     * The positive control for the two cases above: with the gate satisfied the
+     * token does come back, so their empty string is the gate acting and not a
+     * view model that has stopped working.
+     */
+    public function testAVerifiedCustomerIsHandedThePlaintext(): void
+    {
+        $viewModel = $this->viewModelWithStepUp(true);
+        $this->customerSession->method('getCustomerId')->willReturn(15506);
+        $this->licenceRepository->method('getByCustomerId')
+            ->willReturn([$this->licence(LicenceInterface::STATUS_ACTIVE, 'ciphertext')]);
+        $this->encryptor->expects(self::once())->method('decrypt')->with('ciphertext')->willReturn('PLAINTEXT');
+
+        self::assertSame('PLAINTEXT', $viewModel->getLicences()[0]['decrypted_token']);
+        self::assertTrue($viewModel->isStepUpVerified());
+    }
+
+    private function viewModelWithStepUp(bool $verified): LicenceListViewModel
+    {
+        $stepUp = $this->createMock(StepUpSession::class);
+        $stepUp->method('isVerified')->willReturn($verified);
+
+        return new LicenceListViewModel(
+            $this->customerSession,
+            $this->licenceRepository,
+            $this->encryptor,
+            $stepUp
+        );
+    }
+
     private function givenCustomerHas(array $licences): void
     {
         $this->customerSession->method('getCustomerId')->willReturn(15506);
