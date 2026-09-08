@@ -8,6 +8,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **The guest lookup form could never have succeeded, for three reasons.**
+  It POSTed to `bluefairy/packagist/guestLookupPost`, a controller that had never
+  been written — that endpoint now exists in the base package. Beyond that:
+
+  - The form key was read as `$block->getData('form_key')`, an argument the block
+    is never given in layout, so it was always `''` and every request would have
+    failed CSRF. It now comes from `hyva.getFormKey()` at submit time, the way
+    Hyvä's own templates do it: a key rendered into the HTML is baked at
+    cache-write time and no longer matches the visitor's session.
+  - `GuestLookupViewModel::lookup()` returned `['licence' => $licenceObject]`
+    while the template reads `entry.package_name`, `entry.status`,
+    `entry.repo_url` and `entry.decrypted_token`. The results would have rendered
+    blank. The view model now delegates to `GuestLookupService` in the base
+    package, which returns flat arrays keyed as the template reads them.
+  - The Alpine handler awaited `resp.json()` with no `try`/`finally`, so any
+    non-JSON response left `loading` true: the button stayed disabled on
+    "Looking up…" and displayed no error at all. That is exactly how the 404
+    presented for the entire life of the feature.
+
+  Verified end to end on the rig: order number + email now returns the order's
+  package, repository URL and token, and wrong email, unknown order, empty input
+  and a forged form key each fail distinctly.
+
+### Fixed
 - **The guest credential-lookup page had never rendered this package's
   template.** Its layout file was named `bluefairy_packagist_guestlookup_index.xml`,
   but Magento builds a layout handle as `<route-id>_<controller>_<action>` — so
