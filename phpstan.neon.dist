@@ -1,0 +1,16 @@
+# Gate 1 static analysis for module-packagist-provisioner-hyva.
+# Run from the package root, with MAGENTO_ROOT set:
+#   MAGENTO_ROOT=/path/to/magento /path/to/magento/vendor/bin/phpstan analyse
+parameters:
+    level: 5
+    paths:
+        - Observer
+        - ViewModel
+        - registration.php
+    excludePaths:
+        # Shipped code only. Unit tests are PHPUnit's concern, and mocks defeat static typing.
+        - */Test/*
+        - */node_modules/*
+    bootstrapFiles:
+        - Test/bootstrap.php
+    treatPhpDocTypesAsCertain: false

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Unit tests for bluefairy/module-packagist-provisioner-hyva.
+
+    Run from the package root, with MAGENTO_ROOT pointing at any Magento
+    installation whose vendor/ carries the framework:
+
+        MAGENTO_ROOT=/path/to/magento \
+            /path/to/magento/vendor/bin/phpunit -c phpunit.xml.dist
+
+    This package shipped with NO tests and NO gates of any kind — no phpunit
+    config, no phpstan config, and phpcs could not even be pointed at it. Every
+    claim ever made about it had been made through a browser. M2MAP-240.
+-->
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.6/phpunit.xsd"
+         bootstrap="Test/bootstrap.php"
+         colors="true"
+         beStrictAboutTestsThatDoNotTestAnything="true"
+         failOnWarning="true"
+         failOnRisky="true">
+    <testsuites>
+        <testsuite name="BlueFairy_PackagistProvisionerHyva">
+            <directory>Test/Unit</directory>
+        </testsuite>
+    </testsuites>
+</phpunit>

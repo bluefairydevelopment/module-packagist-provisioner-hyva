@@ -12,18 +12,15 @@ use BlueFairy\PackagistProvisioner\Api\Data\LicenceInterface;
 use BlueFairy\PackagistProvisioner\Api\LicenceRepositoryInterface;
 use Magento\Framework\Encryption\EncryptorInterface;
 use Magento\Framework\View\Element\Block\ArgumentInterface;
-use Magento\Sales\Api\OrderRepositoryInterface;
 
 class OrderLicenceViewModel implements ArgumentInterface
 {
     /**
      * @param LicenceRepositoryInterface $licenceRepository
-     * @param OrderRepositoryInterface $orderRepository
      * @param EncryptorInterface $encryptor
      */
     public function __construct(
         private readonly LicenceRepositoryInterface $licenceRepository,
-        private readonly OrderRepositoryInterface $orderRepository,
         private readonly EncryptorInterface $encryptor
     ) {
     }

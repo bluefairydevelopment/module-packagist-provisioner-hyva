@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Gates, and the tests to run through them** (M2MAP-240). This package shipped
+  with none: no `phpunit.xml.dist`, no `phpstan.neon.dist`, and `phpcs` could not
+  even be pointed at it. Every claim ever made about it had been made through a
+  browser.
+
+  27 unit tests across all three view models and the Hyvä config observer.
+  Gates now: **phpunit 27 tests exit 0**, **phpstan level 5 — 0 errors**,
+  **phpcs — 0 errors, 0 warnings across 19 files**.
+
+  Each gate was made to fail on purpose before being trusted, and each returned
+  the specific finding expected:
+
+  | gate | planted defect | result |
+  | :--- | :--- | :--- |
+  | phpunit | observer assigns `extensions` instead of appending | 1 failure — `testExistingRegistrationsArePreserved` |
+  | phpstan | call to an undefined method on `FormKey` | 1 error — `method.notFound` |
+  | phpcs | an `eval()` | 2 errors — "use of function eval() is forbidden" |
+
+  All three returned to green on restore.
+
+  The test bootstrap differs from the base package's in one way worth knowing:
+  every class here names classes from `BlueFairy\PackagistProvisioner`, and
+  composer maps that to the **installed** package rather than the sibling
+  checkout. A sibling source tree therefore wins when one is present, and which
+  tree was used is recorded in `BFD_BASE_PACKAGE_SOURCE` — otherwise a green here
+  can be a green against a base package nobody has looked at.
+
+### Fixed
+- **`OrderLicenceViewModel` injected an `OrderRepositoryInterface` it never
+  used.** Found by phpstan on its first ever run against this package
+  (`property.onlyWritten`). Removed — it was a dependency the DI compiler had to
+  resolve on every instantiation of the order-view block, for nothing. Note this
+  changes a constructor signature, so `generated/` must be cleared, not just
+  `cache:flush`.
+
+- Two auto-fixable indentation warnings in `order/credentials.phtml` and
+  `account/extensions.phtml`, also first surfaced by a gate that had never run.
+
 ### Fixed
 - **The account-navigation cleanup depended on a Hyvä observer this package does
   not require.** Moved from `hyva_customer_account.xml` to `hyva_default.xml`.

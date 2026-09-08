@@ -34,7 +34,7 @@ $licences = $viewModel->getLicences();
                     $licence = $entry['licence'];
                     $token = $entry['decrypted_token'];
                     $isActive = $viewModel->isActive($licence);
-                ?>
+                    ?>
                     <div
                         class="border border-gray-200 rounded p-4 <?= $isActive ? '' : 'opacity-60' ?>"
                         x-data="{
