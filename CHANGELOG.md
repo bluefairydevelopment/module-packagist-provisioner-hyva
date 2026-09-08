@@ -8,6 +8,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **The in-package method-resolution check, scoped to both namespaces**
+  (M2MAP-238) — `Test/Unit/Package/InPackageMethodCallsResolveTest.php`.
+
+  Same check as the base package's, for the same shipped defect: a method called
+  on a service that does not have it parses fine, installs fine, and raises
+  `Error` — which `catch (\Exception)` does not catch — the first time a shopper
+  reaches the line. Here it asserts across **both** `PackagistProvisionerHyva\`
+  and `PackagistProvisioner\`, because three of this package's four classes
+  inject a base service and a base method that is renamed or never existed is a
+  break neither package's own suite would otherwise see.
+
+  Denominators: 4 classes reflected, 9 property calls read, 4 of them on
+  in-package types — each with a floor, so an empty sweep fails rather than
+  passes. **Control:** a call to a method that does not exist on the *base*
+  `GuestLookupService` was named by file, line and type, and the suite returned
+  to green when it was removed. Suite is now **28 tests, exit 0**.
+
 - **Gates, and the tests to run through them** (M2MAP-240). This package shipped
   with none: no `phpunit.xml.dist`, no `phpstan.neon.dist`, and `phpcs` could not
   even be pointed at it. Every claim ever made about it had been made through a
