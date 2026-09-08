@@ -1,0 +1,68 @@
+<?php declare(strict_types=1);
+
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+
+/**
+ * BlueFairy - PackagistProvisionerHyva
+ *
+ * Step-up identity verification form, in front of My Licences.
+ *
+ * Hyvä shoppers previously got the base package's Luma template here, with its
+ * Tailwind classes purged because only this package is registered as a Tailwind
+ * source. M2MAP-242.
+ *
+ * This is a plain POST form on purpose. It carries no Alpine and no fetch: the
+ * page it guards is reached by a redirect, and a JS-driven submit would put a
+ * script between the shopper and their own account.
+ *
+ * @var Template $block
+ * @var Escaper $escaper
+ */
+?>
+<div class="block block-verify max-w-md mx-auto">
+    <div class="block-title mb-6">
+        <h1 class="text-2xl font-semibold text-gray-900">
+            <?= $escaper->escapeHtml(__('Verify Your Identity')) ?>
+        </h1>
+        <p class="mt-2 text-sm text-gray-600">
+            <?= $escaper->escapeHtml(
+                __('For your security, please re-enter your password to access your licences.')
+            ) ?>
+        </p>
+    </div>
+    <div class="block-content">
+        <form class="form form-verify-identity"
+              action="<?= $escaper->escapeUrl($block->getUrl('customer/account/verify')) ?>"
+              method="post"
+              id="form-verify">
+            <?= $block->getBlockHtml('formkey') ?>
+            <div class="field password required mb-4">
+                <label for="password" class="label block text-sm font-medium text-gray-700 mb-1">
+                    <span><?= $escaper->escapeHtml(__('Password')) ?></span>
+                </label>
+                <div class="control">
+                    <input type="password"
+                           name="password"
+                           id="password"
+                           title="<?= $escaper->escapeHtmlAttr(__('Password')) ?>"
+                           class="form-input w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                           required
+                           autocomplete="current-password"/>
+                </div>
+            </div>
+            <div class="actions-toolbar mt-6">
+                <button type="submit"
+                        class="btn btn-primary w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition-colors duration-200">
+                    <?= $escaper->escapeHtml(__('Verify')) ?>
+                </button>
+                <div class="mt-3 text-center">
+                    <a href="<?= $escaper->escapeUrl($block->getUrl('customer/account')) ?>"
+                       class="text-sm text-blue-600 hover:text-blue-800 underline">
+                        <?= $escaper->escapeHtml(__('Back to My Account')) ?>
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

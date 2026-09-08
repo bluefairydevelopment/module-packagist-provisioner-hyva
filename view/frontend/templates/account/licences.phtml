@@ -1,0 +1,133 @@
+<?php declare(strict_types=1);
+
+use BlueFairy\PackagistProvisioner\ViewModel\Account\LicencesViewModel;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+
+/**
+ * BlueFairy - PackagistProvisionerHyva
+ *
+ * My Account — My Licences page.
+ *
+ * Hyvä shoppers previously got the BASE package's Luma template here, because
+ * this package supplied nothing for customer_account_licences. That template is
+ * written in Tailwind classes, and the Hyvä config observer registers only this
+ * package as a Tailwind source — so the base module's classes were purged from
+ * the compiled CSS and the page rendered unstyled. M2MAP-242.
+ *
+ * Credentials are deliberately NOT shown here. The masked-token-with-Reveal
+ * surface is My Extensions on the dashboard; repeating it on a second page would
+ * widen where a token can be shoulder-surfed for no requirement.
+ *
+ * @var LicencesViewModel $viewModel
+ * @var Template $block
+ * @var Escaper $escaper
+ */
+
+$viewModel = $block->getData('view_model');
+$licences  = $viewModel->getLicences();
+
+$badgeClasses = [
+    'badge-success'   => 'bg-green-100 text-green-800',
+    'badge-warning'   => 'bg-yellow-100 text-yellow-800',
+    'badge-danger'    => 'bg-red-100 text-red-800',
+    'badge-secondary' => 'bg-gray-100 text-gray-800',
+    'badge-info'      => 'bg-blue-100 text-blue-800',
+];
+?>
+<div class="block block-licences">
+    <div class="block-title mb-6">
+        <h1 class="text-2xl font-semibold text-gray-900">
+            <?= $escaper->escapeHtml(__('My Licences')) ?>
+        </h1>
+    </div>
+
+    <div class="block-content">
+        <?php if (empty($licences)): ?>
+            <p class="message info p-4 bg-blue-50 border border-blue-200 rounded text-blue-800">
+                <?= $escaper->escapeHtml(__('You have no licences yet.')) ?>
+            </p>
+        <?php else: ?>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b-2 border-gray-200">
+                            <th class="py-3 px-4 text-sm font-semibold text-gray-600 uppercase tracking-wider"><?= $escaper->escapeHtml(__('Package')) ?></th>
+                            <th class="py-3 px-4 text-sm font-semibold text-gray-600 uppercase tracking-wider"><?= $escaper->escapeHtml(__('Order')) ?></th>
+                            <th class="py-3 px-4 text-sm font-semibold text-gray-600 uppercase tracking-wider"><?= $escaper->escapeHtml(__('Status')) ?></th>
+                            <th class="py-3 px-4 text-sm font-semibold text-gray-600 uppercase tracking-wider"><?= $escaper->escapeHtml(__('Expires')) ?></th>
+                            <th class="py-3 px-4 text-sm font-semibold text-gray-600 uppercase tracking-wider"><?= $escaper->escapeHtml(__('Actions')) ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($licences as $licence): ?>
+                            <?php
+                            $days  = $licence['days_remaining'] ?? null;
+                            $badge = $badgeClasses[$licence['status_badge_class'] ?? 'badge-secondary']
+                                ?? 'bg-gray-100 text-gray-800';
+                            ?>
+                            <tr class="border-b border-gray-100 hover:bg-gray-50">
+                                <td class="py-3 px-4 text-sm text-gray-900 font-medium font-mono">
+                                    <?= $escaper->escapeHtml((string) ($licence['package_name'] ?? '')) ?>
+                                </td>
+                                <td class="py-3 px-4 text-sm text-gray-600">
+                                    <?php if (!empty($licence['order_increment_id'])): ?>
+                                        #<?= $escaper->escapeHtml((string) $licence['order_increment_id']) ?>
+                                    <?php else: ?>
+                                        &mdash;
+                                    <?php endif; ?>
+                                </td>
+                                <td class="py-3 px-4 text-sm">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?= $escaper->escapeHtmlAttr($badge) ?>">
+                                        <?= $escaper->escapeHtml((string) ($licence['status_label'] ?? '')) ?>
+                                    </span>
+                                </td>
+                                <td class="py-3 px-4 text-sm text-gray-600">
+                                    <?php if (!empty($licence['expires_at_formatted'])): ?>
+                                        <?= $escaper->escapeHtml((string) $licence['expires_at_formatted']) ?>
+                                        <?php if ($days !== null): ?>
+                                            <span class="block text-xs <?= $days <= 14 ? 'text-red-600 font-semibold' : ($days <= 30 ? 'text-yellow-600' : 'text-gray-400') ?>">
+                                                <?php if ($days < 0): ?>
+                                                    <?= $escaper->escapeHtml((string) __('Expired %1 days ago', abs($days))) ?>
+                                                <?php elseif ($days === 0): ?>
+                                                    <?= $escaper->escapeHtml((string) __('Expires today')) ?>
+                                                <?php else: ?>
+                                                    <?= $escaper->escapeHtml((string) __('%1 days remaining', $days)) ?>
+                                                <?php endif; ?>
+                                            </span>
+                                        <?php endif; ?>
+                                    <?php else: ?>
+                                        &mdash;
+                                    <?php endif; ?>
+                                </td>
+                                <td class="py-3 px-4 text-sm">
+                                    <div class="flex flex-col gap-2 items-start">
+                                        <?php if (!empty($licence['repo_url'])): ?>
+                                            <a href="<?= $escaper->escapeUrl((string) $licence['repo_url']) ?>"
+                                               class="text-blue-600 hover:text-blue-800 underline text-xs"
+                                               target="_blank"
+                                               rel="noopener noreferrer">
+                                                <?= $escaper->escapeHtml(__('View Credentials')) ?>
+                                            </a>
+                                        <?php endif; ?>
+                                        <?php if (!empty($licence['show_renewal_button'])): ?>
+                                            <form action="<?= $escaper->escapeUrl($block->getUrl('customer/account/renew')) ?>" method="post">
+                                                <?= $block->getBlockHtml('formkey') ?>
+                                                <input type="hidden" name="licence_id"
+                                                       value="<?= $escaper->escapeHtmlAttr((string) ($licence['id'] ?? '')) ?>"/>
+                                                <button type="submit"
+                                                        class="bg-green-600 hover:bg-green-700 text-white text-xs font-medium py-1 px-3 rounded transition-colors duration-200">
+                                                    <?= $escaper->escapeHtml(__('Renew')) ?>
+                                                </button>
+                                            </form>
+                                        <?php endif; ?>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php endif; ?>
+    </div>
+</div>

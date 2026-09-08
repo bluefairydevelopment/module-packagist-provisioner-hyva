@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © 2026 Blue Fairy Development. All rights reserved.
+ */
+-->
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <body>
+        <!--
+            referenceBlock, not a second block: the base package already declares
+            customer.packagist.licences on this handle, and adding another would
+            render the page twice. This only swaps the template, so the base
+            LicencesViewModel argument it was given still applies.
+        -->
+        <referenceBlock name="customer.packagist.licences"
+                        template="BlueFairy_PackagistProvisionerHyva::account/licences.phtml"/>
+    </body>
+</page>

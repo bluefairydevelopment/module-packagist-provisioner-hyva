@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Hyvä templates for `/customer/account/licences` and
+  `/customer/account/verify`** (M2MAP-242). This package supplied templates for
+  the dashboard, the order view and the guest lookup, but nothing for those two
+  — so a Hyvä shopper got the BASE package's Luma templates there. Worse than a
+  markup mismatch: those templates are written in Tailwind classes, and the
+  Hyvä config observer registers only this package as a Tailwind source, so the
+  base module's utilities were purged from the compiled CSS and both pages
+  rendered unstyled. Both are reachable from the account navigation, and the
+  verify page guards the licences page for every customer.
+
+  Verified: of the 85 class tokens in the two new templates, all 76 that are
+  Tailwind utilities are present in the compiled `styles.css`; the 9 that are
+  not are structural hooks (`block-content`, `form-verify-identity`,
+  `password`, `required`) which are not utilities and are not expected to be.
+  Control: three utilities no template uses (`bg-fuchsia-700`,
+  `hover:bg-fuchsia-700`, `focus:ring-fuchsia-700`) are absent, so the check can
+  report an absence.
+
+  Credentials are deliberately NOT shown on the licences page. The
+  masked-token-with-Reveal surface is My Extensions on the dashboard; repeating
+  it on a second page would widen where a token can be read over a shoulder for
+  no requirement in FEATURES.md.
+
 ### Fixed
 - **The guest lookup form could never have succeeded, for three reasons.**
   It POSTed to `bluefairy/packagist/guestLookupPost`, a controller that had never
