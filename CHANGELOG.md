@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **The Hyvä requirement is `^1.1.15` instead of `*`** (M2MAP-252). The floor is
+  measured, not guessed — a guessed floor refuses installs that work, which is
+  worse than none.
+
+  What this package actually depends on, surface by surface:
+
+  - **`hyva_config_generate_before`** — the event the Tailwind registration
+    observer listens on. It is registered to `Hyva\Theme\Observer\RegisterModuleForHyvaConfig`
+    (`magento2-theme-module/src/etc/frontend/events.xml:26`), which is the exact
+    observer this package's own mirrors, down to the
+    `extensions[] = ['src' => substr($path, strlen(BP) + 1)]` contract. That
+    observer is described by name in the **1.1.15** release notes — *"Register
+    the Hyva_Theme module to be included in the tailwind purge config"*,
+    2022-06-13, issue #170. **This is the floor.** Below it the event never
+    fires, the observer never runs, and the module's Tailwind classes are purged
+    — an unstyled page, with nothing logged.
+  - **The `hyva_` layout handle convention** — predates the floor. Version
+    **1.1.8** (2021-09-24) carries a *bugfix* extending the prefix to handles
+    added with `<update>`, so the base convention, which is all this package
+    needs since the nav cleanup moved to `hyva_default.xml`, is older still.
+  - **`hyva.getFormKey()`** — needs no floor here, and could not be given one
+    anyway. It is provided by **`magento2-default-theme`**, a different package
+    that this one does not require and should not: a merchant on a
+    Hyvä-derived theme need not have it. The guest-lookup template already
+    handles its absence at runtime —
+    `(typeof hyva !== 'undefined' && hyva.getFormKey) ? hyva.getFormKey() : '<?= … ?>'`
+    — falling back to the view model's session form key. **A runtime feature
+    check is the right answer to an unestablished version dependency; a pin is
+    not.**
+
+  Bounded at `<2.0` rather than left open: Composer warns on an unbound
+  constraint, no Hyvä 2.x exists, and asserting that one would work is exactly
+  the guess this ticket exists to avoid. Verified with Composer's own semver —
+  1.5.2 and 1.1.15 satisfy it, **1.1.14 does not**, and neither does 2.0.0.
+  `composer validate` is clean.
+
 ### Added
 - **The in-package method-resolution check, scoped to both namespaces**
   (M2MAP-238) — `Test/Unit/Package/InPackageMethodCallsResolveTest.php`.
