@@ -8,6 +8,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **The account-navigation cleanup depended on a Hyvä observer this package does
+  not require.** Moved from `hyva_customer_account.xml` to `hyva_default.xml`.
+
+  Hyvä mirrors handles with a `hyva_` prefix in two places: `AddLayoutHandles`
+  (on `layout_load_before`) copies the `addHandle`-registered page handles, and
+  `AddLayoutHandlesUpdates` (on `load_file_layout_updates_xml_after`) copies
+  every `<update handle="X"/>` node. **`customer_account` is not a page handle** —
+  nothing in `vendor/magento` calls `addHandle` for it; it is reached only
+  through `<update handle="customer_account"/>`. So `hyva_customer_account`
+  exists only by virtue of the *second* observer.
+
+  It does work on the Hyvä installed here (1.5.2) — probed with a control, both
+  applied. But `composer.json` requires `hyva-themes/magento2-theme-module` at
+  `"*"`, so this package installs against versions predating that observer, and
+  on one of those the file is inert: the duplicate "My Extensions" link returns
+  with nothing anywhere to indicate it.
+
+  `default` is always in `getHandles()`, so `hyva_default` is mirrored by the
+  *first* observer and works on every Hyvä that supports the prefix convention
+  at all. A `referenceBlock … remove` for a block that is not on the page is a
+  no-op, so applying it site-wide costs nothing. Probed both directions before
+  relying on it: the handle applies on the Hyvä store view and does **not** apply
+  on the Luma one.
+
+### Fixed
 - **This package's layout applied on EVERY theme, not just Hyvä.** None of its
   six layout files carried the `hyva_` prefix, so Magento loaded them on a Luma
   store view as well — and a Luma shopper was served Alpine templates on a page

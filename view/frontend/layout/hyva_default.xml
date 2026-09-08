@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © 2026 Blue Fairy Development. All rights reserved.
+ */
+-->
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <body>
+        <!--
+            Remove the duplicate "My Extensions" link Blue_LicenseDelivery adds to
+            the account navigation. This package's own My Extensions block is the
+            one that should be there.
+
+            WHY hyva_default AND NOT hyva_customer_account, which is where this
+            obviously belongs:
+
+            Hyvä mirrors handles with a hyva_ prefix in two places -
+            AddLayoutHandles (layout_load_before) copies the addHandle-registered
+            handles, and AddLayoutHandlesUpdates (load_file_layout_updates_xml_after)
+            copies every <update handle="X"/> node. `customer_account` is NOT a
+            page handle: nothing in vendor/magento calls addHandle for it, it is
+            reached only through <update handle="customer_account"/>. So
+            `hyva_customer_account` exists ONLY by the second observer.
+
+            Measured: it does work on the Hyvä installed here (1.5.2). But
+            composer.json requires hyva-themes/magento2-theme-module at "*", so
+            this package installs against versions predating that observer, and
+            on one of those the file would be inert - silently restoring the
+            duplicate link with nothing to indicate it.
+
+            `default` is always in getHandles(), so `hyva_default` is mirrored by
+            the FIRST observer and works on every Hyvä that supports the prefix
+            convention at all. A referenceBlock remove for a block that is not on
+            the page is a no-op, so applying it site-wide costs nothing.
+
+            Probed both directions before relying on it: the handle applies on
+            the Hyvä store view and does NOT apply on the Luma one.
+        -->
+        <referenceBlock name="customer-account-link-license-extensions" remove="true"/>
+    </body>
+</page>
