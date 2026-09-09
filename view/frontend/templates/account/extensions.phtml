@@ -8,7 +8,7 @@ use Magento\Framework\View\Element\Template;
 /**
  * BlueFairy - PackagistProvisionerHyva
  *
- * My Account — My Extensions tab.
+ * My Account — My Licences summary block on the dashboard.
  *
  * Copyright © 2026 Blue Fairy Development. All rights reserved.
  *
@@ -22,7 +22,7 @@ $licences = $viewModel->getLicences();
 ?>
 <div class="block block-dashboard-info">
     <div class="block-title">
-        <strong><?= $escaper->escapeHtml(__('My Extensions')) ?></strong>
+        <strong><?= $escaper->escapeHtml(__('My Licences')) ?></strong>
     </div>
     <div class="block-content">
         <?php if (empty($licences)): ?>
@@ -117,5 +117,25 @@ $licences = $viewModel->getLicences();
                 <?php endforeach; ?>
             </div>
         <?php endif; ?>
+
+        <?php /* M2MAP-282. UNCONDITIONAL, AND OUTSIDE THE LOOP.
+
+           README.md has always described this block as carrying "a link through
+           to the full My Licences page", and it never has. M2MAP-260 added one,
+           but only on the branch where the customer has NOT re-authenticated -
+           so the documented link existed in precisely the state where they were
+           going to be redirected anyway, and was missing in the state the
+           README describes.
+
+           It matters because My Licences is where Renew lives, and this is the
+           page a customer lands on after signing in. Inside the loop the link
+           is conditional on there being a licence AND on that licence's state;
+           here it is the block's own link, and it renders for the empty case
+           too - a customer whose licence has expired off this list still needs
+           the page that sells them a renewal. */ ?>
+        <p class="mt-4 text-sm">
+            <a href="<?= $escaper->escapeUrl($block->getUrl('customer/account/licences')) ?>"
+               class="text-blue-600 hover:underline"><?= $escaper->escapeHtml(__('Manage licences and renewals')) ?> &rarr;</a>
+        </p>
     </div>
 </div>

@@ -76,7 +76,7 @@ bin/magento cache:flush
 
 ## Features
 
-### My Extensions — Dashboard Block
+### My Licences — Dashboard Block
 
 A summary block appears on the customer account dashboard (below the address panel) listing all active licences with status badges and a link through to the full My Licences page.
 

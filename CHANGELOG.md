@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **The dashboard block now carries the link to My Licences that README
+  promises** (M2MAP-282). README.md has always described this block as
+  "listing all active licences with status badges and a link through to the
+  full My Licences page", and it never had one. M2MAP-260 added a link — but
+  **only on the branch where the customer has not re-authenticated**, so the
+  documented link existed in exactly the state where the customer was going to
+  be redirected anyway, and was absent in the state the README describes.
+
+  It matters beyond tidiness: **My Licences is where Renew lives**, and the
+  dashboard is the page a customer lands on after signing in. With no link
+  between them the only routes to the renewal control were the account
+  navigation entry and typing the URL.
+
+  The link is now rendered **unconditionally, outside the per-licence loop**, so
+  it is the block's own link rather than one licence's prompt — including for
+  the empty case, since a customer whose licence has expired off this list is
+  exactly the one who needs the page that sells a renewal.
+
+  **And the block was named after a page that does not exist.** Its title said
+  "My Extensions"; the page title, the account-navigation entry and every email
+  the base package sends say "My Licences" (M2MAP-268). Renamed here and in
+  README.md.
+
+  `Test/Unit/Package/DashboardBlockReachesTheLicencesPageTest.php` asserts the
+  link's POSITION, not merely its presence — a link that only ever appears
+  inside the loop is conditional on a licence and on that licence's state, and
+  so cannot be the block's link to the page. Mutation-proven: moving the link
+  back inside the loop fails exactly the position test; restoring the old title
+  fails exactly the naming test.
+
+  **Checked while here, and it holds:** the ticket warned that
+  `hyva_default.xml` removes a nav link as a duplicate, so the navigation route
+  needed re-checking. It removes `customer-account-link-license-extensions`; the
+  base package's link is `customer-account-link-packagist-licences`. Different
+  names, so the navigation entry survives. **That removal is a no-op** — no
+  package has ever declared the name it targets, since 1.0.0 — and is filed
+  separately rather than deleted here.
+
 ### Security
 - **The Packagist token is no longer shown without password re-entry**
   (M2MAP-260). The base package refuses to release a token until the customer
