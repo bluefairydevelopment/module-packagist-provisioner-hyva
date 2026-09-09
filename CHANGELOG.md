@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **The PHP constraint is bounded** (M2MAP-280). `composer.json` said `>=8.1`
+  and the README said "PHP 8.1+"; both agreed, which is why it never looked
+  wrong. `>=8.1` admits PHP 9 and every version after it.
+
+  Now `~8.1.0 || ~8.2.0 || ~8.3.0 || ~8.4.0 || ~8.5.0`, matching the base
+  package. The range is wide and safe because Composer installs only the
+  intersection with the Magento release's own PHP requirement — 2.4.9 requires
+  `~8.3.0||~8.4.0||~8.5.0`, so an incoherent pair cannot be selected whatever
+  this package declares. README updated in the same change.
+
 ### Removed
 - **The shadow `1.0.0` tag** (M2MAP-256). This repository carried **both**
   `1.0.0` (`3e66f22`) and `v1.0.0` (`16de872`), tagged six days apart. Composer

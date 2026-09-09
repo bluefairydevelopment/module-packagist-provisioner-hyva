@@ -7,7 +7,13 @@ Hyvä theme frontend for `BlueFairy_PackagistProvisioner`. Adds a My Extensions 
 ## Requirements
 
 - Magento 2.4.4+
-- PHP 8.1+
+- PHP 8.1 – 8.5
+
+The PHP constraint is enumerated (`~8.1.0 || … || ~8.5.0`) rather than `>=8.1`,
+which admitted PHP 9 and everything after it (M2MAP-280). The range is broad and
+safe because Composer installs only the intersection with your Magento release's
+own PHP requirement — 2.4.9 requires `~8.3.0||~8.4.0||~8.5.0`, so an incoherent
+pair cannot be selected whatever this package says.
 - [Hyvä Theme](https://hyva.io) 1.3+
 - [`bluefairy/module-packagist-provisioner`](https://github.com/bluefairydevelopment/module-packagist-provisioner) ^1.0
 
