@@ -11,46 +11,47 @@ namespace BlueFairy\PackagistProvisionerHyva\Test\Unit\Package;
 use PHPUnit\Framework\TestCase;
 
 /**
- * M2MAP-256. TWO TAGS CLAIMED VERSION 1.0.0 AT DIFFERENT COMMITS.
+ * M2MAP-256. TWO TAGS CLAIMED VERSION 1.0.0 AT DIFFERENT COMMITS. CURED.
  *
  * Composer normalises "1.0.0" and "v1.0.0" to the same version, so two
  * different trees, tagged six days apart, both claimed to be 1.0.0. Private
- * Packagist resolved it in favour of v1.0.0 - verified by ASKING PACKAGIST
+ * Packagist resolved it in favour of v1.0.0 - established by ASKING PACKAGIST
  * rather than reading the repository:
  *
- *     composer show bluefairy/module-packagist-provisioner --all
+ *     composer show <this package> --all
  *     dist: .../1.0.0.0/16de872ee3c5343e58ef6ddd6192056810decc8b.zip
  *
- * so the other tag shipped nothing to anybody and can only mislead whoever
- * reads `git tag` next.
+ * so the shadow tag shipped nothing to anybody and could only mislead whoever
+ * read `git tag` next.
  *
- * THE DELETION IS NOT MINE TO MAKE. Removing a published ref from a repository
- * that feeds a live package registry is an outward-facing action, and it was
- * refused by this session's permission layer - correctly. It is recorded in
- * EXPECTED_DUPLICATES below with the exact restore commands, and this test goes
- * red the moment a NEW collision appears, which is the part that was actually
- * missing.
+ * THE SHADOW TAG WAS DELETED ON 2026-09-08, local and remote, with Jennifer's
+ * explicit permission - the deletion is an outward-facing act on a repository
+ * feeding a live registry, so it waited for that. Because the dist above
+ * already pointed at v1.0.0's commit, removing the other ref could not change
+ * what any customer resolves. Both commits were ancestors of HEAD, so nothing
+ * was orphaned; to restore:
  *
- * WHY THE EXEMPTION IS DATED AND NAMED rather than the test being deleted: an
- * allowlist entry that nobody has to clear is indistinguishable from no test.
- * When Jennifer removes the tags, this constant goes back to empty and the test
- * gets stricter by itself.
+ *     git tag 1.0.0 3e66f2277fe276d16da991a786616aa154c5dcf2 && git push origin 1.0.0
+ *
+ * EXPECTED_DUPLICATES is now empty and the test is strict: any new collision
+ * fails it.
+ *
+ * WHY THERE IS A SYNTHETIC CONTROL. With one tag left in the repository the
+ * collision branch can no longer be entered by real data, so a green here would
+ * otherwise be vacuous - it would look identical whether the detector worked or
+ * did nothing at all. testTheDetectorFindsACollision feeds a known-colliding
+ * list through THE SAME collisions() method the real assertion uses, so the
+ * pass below is backed by a demonstration that the instrument fires.
  */
 class NoTwoTagsClaimOneVersionTest extends TestCase
 {
     /**
-     * Known collisions, pending a deletion only a human with publish rights can
-     * make. Each entry is "normalised version" => what to do about it.
+     * Known collisions still awaiting a deletion. Empty since 2026-09-08.
+     * Each entry would be "normalised version" => what to do about it.
      *
      * @var array<string, string>
      */
-    private const EXPECTED_DUPLICATES = [
-        '1.0.0' => 'M2MAP-256: tags "1.0.0" (3e66f2277fe276d16da991a786616aa154c5dcf2) and "v1.0.0" (16de872ee3c5343e58ef6ddd6192056810decc8b). '
-            . 'Packagist serves v1.0.0; the other shipped nothing. Delete with '
-            . '`git tag -d 1.0.0 && git push origin :refs/tags/1.0.0`; restore with '
-            . '`git tag 1.0.0 3e66f2277fe276d16da991a786616aa154c5dcf2 && git push origin 1.0.0`. Both commits are '
-            . 'ancestors of HEAD, so the deletion orphans nothing.',
-    ];
+    private const EXPECTED_DUPLICATES = [];
 
     public function testNoTwoTagsNormaliseToTheSameComposerVersion(): void
     {
@@ -58,11 +59,6 @@ class NoTwoTagsClaimOneVersionTest extends TestCase
 
         if ($tags === []) {
             self::markTestSkipped('no git tags are visible from here; nothing to compare');
-        }
-
-        $byVersion = [];
-        foreach ($tags as $tag) {
-            $byVersion[$this->normalise($tag)][] = $tag;
         }
 
         // The control: normalisation must actually collapse the two spellings,
@@ -74,16 +70,7 @@ class NoTwoTagsClaimOneVersionTest extends TestCase
             . 'test exists for'
         );
 
-        $unexpected = [];
-        foreach ($byVersion as $version => $claiming) {
-            if (count($claiming) < 2) {
-                continue;
-            }
-            if (isset(self::EXPECTED_DUPLICATES[$version])) {
-                continue;
-            }
-            $unexpected[] = sprintf('%s claimed by: %s', $version, implode(', ', $claiming));
-        }
+        $unexpected = $this->collisions($tags);
 
         self::assertSame(
             [],
@@ -97,6 +84,56 @@ class NoTwoTagsClaimOneVersionTest extends TestCase
                 implode("\n  ", $unexpected)
             )
         );
+    }
+
+    /**
+     * The positive control for the assertion above.
+     *
+     * The repository now holds a single tag, so the real list can no longer
+     * produce a collision and cannot demonstrate that the detector works. This
+     * drives the SAME collisions() method with a list that must collide.
+     */
+    public function testTheDetectorFindsACollision(): void
+    {
+        $found = $this->collisions(['1.0.0', 'v1.0.0', '2.0.0']);
+
+        self::assertCount(
+            1,
+            $found,
+            'collisions() did not report the deliberate "1.0.0" / "v1.0.0" collision, so a green '
+            . 'from testNoTwoTagsNormaliseToTheSameComposerVersion means nothing'
+        );
+        self::assertStringContainsString('1.0.0 claimed by', $found[0]);
+        self::assertStringContainsString('v1.0.0', $found[0]);
+    }
+
+    /**
+     * Every normalised version claimed by more than one tag, minus the
+     * allowlist. Shared by the real check and its control on purpose.
+     *
+     * @param string[] $tags
+     *
+     * @return string[]
+     */
+    private function collisions(array $tags): array
+    {
+        $byVersion = [];
+        foreach ($tags as $tag) {
+            $byVersion[$this->normalise($tag)][] = $tag;
+        }
+
+        $unexpected = [];
+        foreach ($byVersion as $version => $claiming) {
+            if (count($claiming) < 2) {
+                continue;
+            }
+            if (isset(self::EXPECTED_DUPLICATES[$version])) {
+                continue;
+            }
+            $unexpected[] = sprintf('%s claimed by: %s', $version, implode(', ', $claiming));
+        }
+
+        return $unexpected;
     }
 
     /**

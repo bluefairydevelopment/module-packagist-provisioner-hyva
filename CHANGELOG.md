@@ -8,6 +8,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Removed
+- **The shadow `1.0.0` tag** (M2MAP-256). This repository carried **both**
+  `1.0.0` (`3e66f22`) and `v1.0.0` (`16de872`), tagged six days apart. Composer
+  normalises the two spellings to the same version, so two different trees
+  claimed to be the same release. Private Packagist resolved it in favour of
+  `v1.0.0` — established by **asking Packagist** rather than reading the
+  repository, its dist being `.../1.0.0.0/16de872….zip` — so the shadow tag had
+  shipped nothing to anybody and could only mislead whoever read `git tag`
+  next.
+
+  Deleted local and remote on 2026-09-08 with Jennifer's explicit permission;
+  removing a published ref from a repository feeding a live registry is
+  outward-facing and waited for that. Because the dist already pointed at
+  `v1.0.0`'s commit, the deletion **cannot change what any customer resolves**,
+  and both commits were ancestors of HEAD, so nothing was orphaned. The restore
+  command is preserved in `NoTwoTagsClaimOneVersionTest`'s docblock.
+
+  `EXPECTED_DUPLICATES` is now **empty** and the guard is strict: any new
+  collision fails it.
+
+  **The fix created a vacuous green, and it is covered.** With one tag left the
+  collision branch can no longer be entered by real data, so the real check
+  would pass identically whether the detector worked or did nothing.
+  `testTheDetectorFindsACollision` drives **the same `collisions()` method**
+  with a known-colliding list. Proven: stubbing `collisions()` to return `[]`
+  leaves the real check green and fails only the control.
+
 - **`hyva_default.xml` is gone; its only directive was a no-op** (M2MAP-292). It
   removed a nav block called `customer-account-link-license-extensions`,
   described as a duplicate added by `Blue_LicenseDelivery`. **Nothing has ever
