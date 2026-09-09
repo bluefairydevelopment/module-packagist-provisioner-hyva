@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0] - 2026-09-09
 
+### Fixed
+- **The `pre-push` hook rejected every tag push, always.** A tag names a commit
+  already on the branch, so the hook's "new commits" query returned nothing and
+  it reported *"CHANGELOG.md has not been updated"* about a commit whose own diff
+  contains `CHANGELOG.md`. It now skips `refs/tags/*`. Verified with the control
+  that matters: a branch push whose diff holds no changelog is still rejected.
+
 ### Changed
 - **Requires base `^1.1`, not `^1.0`** — a correction, not a routine bump. This
   package constructor-injects `BlueFairy\PackagistProvisioner\Model\GuestLookupService`

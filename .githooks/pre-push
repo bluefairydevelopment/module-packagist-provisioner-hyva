@@ -10,6 +10,15 @@ changelog_updated=false
 while read local_ref local_sha remote_ref remote_sha; do
     # Skip branch deletions
     [ "$local_sha" = "$z40" ] && continue
+
+    # Skip TAGS. A tag names a commit that is already on the branch, so the
+    # "new commits" query below returns nothing, `changed` is empty, and this
+    # hook rejected EVERY tag push - reporting "CHANGELOG.md has not been
+    # updated" about a commit whose diff contains CHANGELOG.md. The gate it is
+    # meant to enforce has already been enforced on the branch push that
+    # carried that commit.
+    case "$local_ref" in refs/tags/*) continue ;; esac
+
     has_commits=true
 
     if [ "$remote_sha" = "$z40" ]; then
