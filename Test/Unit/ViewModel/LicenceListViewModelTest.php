@@ -13,6 +13,7 @@ use BlueFairy\PackagistProvisioner\Api\LicenceRepositoryInterface;
 use BlueFairy\PackagistProvisioner\Model\Auth\StepUpSession;
 use BlueFairy\PackagistProvisionerHyva\ViewModel\LicenceListViewModel;
 use Magento\Customer\Model\Session;
+use BlueFairy\PackagistProvisioner\Model\TokenReleaseService;
 use Magento\Framework\Encryption\EncryptorInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -50,7 +51,11 @@ class LicenceListViewModelTest extends TestCase
         $this->viewModel = new LicenceListViewModel(
             $this->customerSession,
             $this->licenceRepository,
-            $this->encryptor,
+            // M2MAP-269. The REAL release service over a mocked encryptor.
+            // These tests assert the ACTIVE-only rule and the degrade-to-empty
+            // behaviour, which now live in the service - mocking it would leave
+            // them asserting nothing.
+            new TokenReleaseService($this->encryptor),
             $this->stepUpSession
         );
     }
@@ -236,7 +241,11 @@ class LicenceListViewModelTest extends TestCase
         return new LicenceListViewModel(
             $this->customerSession,
             $this->licenceRepository,
-            $this->encryptor,
+            // M2MAP-269. The REAL release service over a mocked encryptor.
+            // These tests assert the ACTIVE-only rule and the degrade-to-empty
+            // behaviour, which now live in the service - mocking it would leave
+            // them asserting nothing.
+            new TokenReleaseService($this->encryptor),
             $stepUp
         );
     }

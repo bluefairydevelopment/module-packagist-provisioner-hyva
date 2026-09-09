@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Both view models now call the base package's `TokenReleaseService`**
+  (M2MAP-269). The ACTIVE-only rule, the null-token check and the
+  degrade-to-empty-string on a decryption failure were implemented inline here,
+  twice, and twice more in the base package. Nothing forced the four to agree,
+  so one theme could release a token the other correctly withheld.
+
+  The step-up verdict is still this package's own decision and is passed in as
+  an argument — the service deliberately requires it and supplies no default.
+
+  **`TokenDecryptionIsGatedTest` had to be retargeted, and its floor is what
+  caught that.** Its predicate was "the ViewModel source contains `->decrypt(`".
+  Extracting the rule took the last such call out of this package, so the
+  predicate matched nothing and the gate assertion became **vacuously true** —
+  it would have passed against a companion showing every token to everybody. It
+  now matches `->release(` as well, and adds the assertion that mattered: a
+  literal `true` passed as the authorisation verdict is a failure, because that
+  is precisely how someone makes this test green while removing the gate — the
+  constructor argument and the `isVerified()` mention both survive it.
+
 ### Fixed
 - **The dashboard block now carries the link to My Licences that README
   promises** (M2MAP-282). README.md has always described this block as

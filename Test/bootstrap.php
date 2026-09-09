@@ -76,12 +76,74 @@ if ($baseSrc !== null) {
 
 $generated = $magentoRoot . '/generated/code/';
 
+/**
+ * M2MAP-283(b). WHAT THE SENTINEL PROVES, AND WHAT IT DOES NOT.
+ *
+ * The generic sentinel below proves only that SOMETHING was compiled on this
+ * install. It cannot prove that THIS module was - a di:compile run from before
+ * this package existed satisfies it perfectly - so it is a proxy, and it is
+ * named as one rather than left to read like a guarantee.
+ *
+ * Where the package declares extension attributes OF ITS OWN, there is a
+ * better instrument, and it is used first: every <extension_attributes for="X">
+ * in etc/extension_attributes.xml requires a generated XExtensionInterface, and
+ * that file existing proves this module's own contribution reached the
+ * compiler. This package declares none today; the loop is data-driven so it
+ * strengthens by itself the moment one is added, rather than needing someone to
+ * notice.
+ *
+ * @param string $forType e.g. Magento\Catalog\Api\Data\ProductInterface
+ * @return string the generated interface path that must exist for it
+ */
+function ppBootstrapExtensionSentinel(string $forType): string
+{
+    $base = str_ends_with($forType, 'Interface') ? substr($forType, 0, -strlen('Interface')) : $forType;
+
+    return str_replace('\\', '/', ltrim($base, '\\')) . 'ExtensionInterface.php';
+}
+
+$ownAttributes = [];
+$attributesFile = dirname(__DIR__) . '/etc/extension_attributes.xml';
+if (is_file($attributesFile)) {
+    $attributesXml = simplexml_load_file($attributesFile);
+    if ($attributesXml !== false) {
+        foreach ($attributesXml->xpath('//extension_attributes') ?: [] as $declaration) {
+            $for = (string) ($declaration['for'] ?? '');
+            if ($for !== '') {
+                $ownAttributes[$for] = ppBootstrapExtensionSentinel($for);
+            }
+        }
+    }
+}
+
+foreach ($ownAttributes as $forType => $sentinel) {
+    if (!is_file($generated . $sentinel)) {
+        fwrite(STDERR, sprintf(
+            "\nREFUSING to run: this module's OWN extension attribute for %s has not been compiled.\n"
+            . "Missing: %s\n"
+            . "etc/extension_attributes.xml declares it, so a di:compile that included this module\n"
+            . "would have produced it. Its absence means the install at %s was compiled WITHOUT\n"
+            . "this module, and any accessor this package adds would be synthesised away.\n"
+            . "Run:  cd %s && php -d memory_limit=-1 bin/magento setup:di:compile\n\n",
+            $forType,
+            $generated . $sentinel,
+            $magentoRoot,
+            $magentoRoot
+        ));
+        exit(1);
+    }
+}
+
+// The proxy. Weaker than the loop above on purpose: it says DI was compiled at
+// some point, not that it was compiled with this module in it.
 foreach (['Magento/Catalog/Api/Data/ProductExtensionInterface.php'] as $sentinel) {
     if (!is_file($generated . $sentinel)) {
         fwrite(STDERR, sprintf(
             "\nREFUSING to run: %s is missing.\n"
-            . "The Magento install at %s has no compiled DI, so extension-attribute interfaces\n"
-            . "would be synthesised empty and this run would measure phantoms.\n"
+            . "The Magento install at %s has no compiled DI AT ALL, so extension-attribute\n"
+            . "interfaces would be synthesised empty and this run would measure phantoms.\n"
+            . "(This is a proxy: it proves something was compiled, not that THIS module was.\n"
+            . "The stronger check runs above when the package declares its own attributes.)\n"
             . "Run:  cd %s && php -d memory_limit=-1 bin/magento setup:di:compile\n\n",
             $generated . $sentinel,
             $magentoRoot,

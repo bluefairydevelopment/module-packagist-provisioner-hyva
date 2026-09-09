@@ -53,23 +53,33 @@ use ReflectionNamedType;
 class TokenDecryptionIsGatedTest extends TestCase
 {
     /**
-     * The count of decrypting view models at the time of writing. Asserted as a
-     * floor so that a rename, a moved directory or a changed predicate cannot
-     * turn this into a check with nothing to examine - which would pass.
+     * The count of token-releasing view models at the time of writing. Asserted
+     * as a floor so that a rename, a moved directory or a changed predicate
+     * cannot turn this into a check with nothing to examine - which would pass.
+     *
+     * M2MAP-269 MOVED THIS TEST'S SUBJECT AND THE FLOOR IS WHAT CAUGHT IT.
+     * The predicate used to be "the source contains ->decrypt(". Extracting the
+     * token-release rule into the base package's TokenReleaseService took the
+     * last decrypt() call out of this directory, so the predicate matched
+     * NOTHING and the gate assertion below became vacuously true - it would
+     * have passed against a companion that showed every token to everybody.
+     * The floor turned that into a failure. It was retargeted, not lowered:
+     * what a view model does now is CALL the release service, and what must be
+     * gated is the authorisation verdict it passes.
      */
-    private const MINIMUM_DECRYPTING_VIEW_MODELS = 2;
-    private const MINIMUM_VIEW_MODELS            = 3;
+    private const MINIMUM_RELEASING_VIEW_MODELS = 2;
+    private const MINIMUM_VIEW_MODELS           = 3;
 
-    public function testEveryViewModelThatDecryptsATokenTakesTheStepUpGate(): void
+    public function testEveryViewModelThatReleasesATokenPassesTheStepUpVerdict(): void
     {
         $viewModelDir = dirname(__DIR__, 3) . '/ViewModel';
         self::assertDirectoryExists($viewModelDir, 'The ViewModel directory moved; this check is looking at nothing.');
 
         $files = glob($viewModelDir . '/*.php') ?: [];
 
-        $examined   = 0;
-        $decrypting = [];
-        $ungated    = [];
+        $examined  = 0;
+        $releasing = [];
+        $ungated   = [];
 
         foreach ($files as $file) {
             $examined++;
@@ -77,14 +87,28 @@ class TokenDecryptionIsGatedTest extends TestCase
             self::assertTrue(class_exists($class), $class . ' does not load.');
 
             $source = (string) file_get_contents($file);
-            if (!str_contains($source, '->decrypt(')) {
+
+            // Either shape counts as releasing a token: calling the shared
+            // service, or decrypting inline the way this package used to.
+            $callsService = str_contains($source, '->release(');
+            $decrypts     = str_contains($source, '->decrypt(');
+            if (!$callsService && !$decrypts) {
                 continue;
             }
 
-            $decrypting[] = $class;
+            $releasing[] = $class;
 
             if (!$this->takesStepUpSession($class) || !str_contains($source, 'isVerified(')) {
-                $ungated[] = $class;
+                $ungated[] = $class . ' (no step-up gate)';
+                continue;
+            }
+
+            // THE SHARP ONE. Handing the service a literal true is exactly how
+            // somebody makes this test green while removing the gate - the
+            // constructor argument and the isVerified() mention both survive.
+            // On a customer-facing surface the verdict must be a VALUE.
+            if (preg_match('/->release\\(\\s*\\$[A-Za-z0-9_>()\\-]+\\s*,\\s*true\\s*\\)/', $source)) {
+                $ungated[] = $class . ' (passes a literal true to release())';
             }
         }
 
@@ -95,22 +119,22 @@ class TokenDecryptionIsGatedTest extends TestCase
         );
 
         self::assertGreaterThanOrEqual(
-            self::MINIMUM_DECRYPTING_VIEW_MODELS,
-            count($decrypting),
+            self::MINIMUM_RELEASING_VIEW_MODELS,
+            count($releasing),
             sprintf(
-                'Only %d of %d view models were found to decrypt a token. This check passes '
+                'Only %d of %d view models were found to release a token. This check passes '
                 . 'vacuously if it finds none, so a drop here is a broken predicate, not good news.',
-                count($decrypting),
+                count($releasing),
                 $examined
             )
         );
 
         self::assertSame([], $ungated, sprintf(
-            'These view models decrypt a licence token without the step-up gate: %s. '
-            . '(%d of %d view models decrypt.) The base package will not release this value '
-            . 'without password re-entry; neither may the Hyvä companion. M2MAP-260.',
+            'These view models release a licence token without the step-up gate: %s. '
+            . '(%d of %d view models release.) The base package will not release this value '
+            . 'without password re-entry; neither may the Hyva companion. M2MAP-260, M2MAP-269.',
             implode(', ', $ungated),
-            count($decrypting),
+            count($releasing),
             $examined
         ));
     }

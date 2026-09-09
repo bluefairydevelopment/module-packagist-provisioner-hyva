@@ -12,7 +12,7 @@ use BlueFairy\PackagistProvisioner\Api\Data\LicenceInterface;
 use BlueFairy\PackagistProvisioner\Api\LicenceRepositoryInterface;
 use BlueFairy\PackagistProvisioner\Model\Auth\StepUpSession;
 use Magento\Customer\Model\Session;
-use Magento\Framework\Encryption\EncryptorInterface;
+use BlueFairy\PackagistProvisioner\Model\TokenReleaseService;
 use Magento\Framework\View\Element\Block\ArgumentInterface;
 
 class LicenceListViewModel implements ArgumentInterface
@@ -20,13 +20,13 @@ class LicenceListViewModel implements ArgumentInterface
     /**
      * @param Session $customerSession
      * @param LicenceRepositoryInterface $licenceRepository
-     * @param EncryptorInterface $encryptor
+     * @param TokenReleaseService $tokenRelease
      * @param StepUpSession $stepUpSession
      */
     public function __construct(
         private readonly Session $customerSession,
         private readonly LicenceRepositoryInterface $licenceRepository,
-        private readonly EncryptorInterface $encryptor,
+        private readonly TokenReleaseService $tokenRelease,
         // M2MAP-260. The base package refuses to show a token until the customer
         // re-enters their password; this block sits on the account dashboard,
         // which is not behind that gate, so it has to ask for itself.
@@ -64,24 +64,19 @@ class LicenceListViewModel implements ArgumentInterface
         $result = [];
 
         foreach ($licences as $licence) {
-            $decryptedToken = '';
-            // The gate is applied HERE rather than in the template so that the
-            // plaintext is never produced at all when it may not be shown. The
-            // templates put the token into the HTML and use Alpine only to
-            // toggle its visibility, so anything decrypted here reaches
-            // view-source whether or not a button is pressed.
-            $isActive = $licence->getStatus() === LicenceInterface::STATUS_ACTIVE;
-            if ($verified && $isActive && $licence->getToken() !== null) {
-                try {
-                    $decryptedToken = $this->encryptor->decrypt($licence->getToken());
-                } catch (\Exception) {
-                    $decryptedToken = '';
-                }
-            }
-
+            // M2MAP-269. The ACTIVE-only rule, the null-token check and the
+            // degrade-to-empty-string on a decryption failure all live in the
+            // base package's TokenReleaseService now, so this surface cannot
+            // drift from the guest lookup or from the Luma one.
+            //
+            // M2MAP-260 is the argument, not the service: the gate is applied
+            // BEFORE decryption rather than before display, because the
+            // templates put the plaintext into the HTML and use Alpine only to
+            // toggle visibility - anything decrypted here reaches view-source
+            // whether or not a button is pressed.
             $result[] = [
                 'licence'         => $licence,
-                'decrypted_token' => $decryptedToken,
+                'decrypted_token' => $this->tokenRelease->release($licence, $verified),
             ];
         }
 

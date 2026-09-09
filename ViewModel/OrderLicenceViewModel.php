@@ -11,19 +11,19 @@ namespace BlueFairy\PackagistProvisionerHyva\ViewModel;
 use BlueFairy\PackagistProvisioner\Api\Data\LicenceInterface;
 use BlueFairy\PackagistProvisioner\Api\LicenceRepositoryInterface;
 use BlueFairy\PackagistProvisioner\Model\Auth\StepUpSession;
-use Magento\Framework\Encryption\EncryptorInterface;
+use BlueFairy\PackagistProvisioner\Model\TokenReleaseService;
 use Magento\Framework\View\Element\Block\ArgumentInterface;
 
 class OrderLicenceViewModel implements ArgumentInterface
 {
     /**
      * @param LicenceRepositoryInterface $licenceRepository
-     * @param EncryptorInterface $encryptor
+     * @param TokenReleaseService $tokenRelease
      * @param StepUpSession $stepUpSession
      */
     public function __construct(
         private readonly LicenceRepositoryInterface $licenceRepository,
-        private readonly EncryptorInterface $encryptor,
+        private readonly TokenReleaseService $tokenRelease,
         // M2MAP-260, as on LicenceListViewModel. The order view is the second
         // ungated route to the same value.
         private readonly StepUpSession $stepUpSession
@@ -50,21 +50,11 @@ class OrderLicenceViewModel implements ArgumentInterface
         $result = [];
 
         foreach ($licences as $licence) {
-            $decryptedToken = '';
-            // Gated before decryption, not before display - see the note on
-            // LicenceListViewModel::getLicences().
-            $isActive = $licence->getStatus() === LicenceInterface::STATUS_ACTIVE;
-            if ($verified && $isActive && $licence->getToken() !== null) {
-                try {
-                    $decryptedToken = $this->encryptor->decrypt($licence->getToken());
-                } catch (\Exception) {
-                    $decryptedToken = '';
-                }
-            }
-
+            // M2MAP-269, and gated before decryption rather than before
+            // display - see the note on LicenceListViewModel::getLicences().
             $result[] = [
                 'licence'         => $licence,
-                'decrypted_token' => $decryptedToken,
+                'decrypted_token' => $this->tokenRelease->release($licence, $verified),
             ];
         }
 
