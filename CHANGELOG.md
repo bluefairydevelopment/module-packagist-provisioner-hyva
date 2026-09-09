@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+- **`hyva_default.xml` is gone; its only directive was a no-op** (M2MAP-292). It
+  removed a nav block called `customer-account-link-license-extensions`,
+  described as a duplicate added by `Blue_LicenseDelivery`. **Nothing has ever
+  declared that name** — the only occurrence anywhere in the Magento install was
+  the line removing it, confirmed with a control (a real nav block name resolves
+  to two files). `Blue_LicenseDelivery` does not exist in this estate.
+
+  It arrived already wrong in `feat: initial release 1.0.0` and was later
+  carefully *moved* to `hyva_default` with fourteen lines of reasoning about
+  which handle Hyvä mirrors — all of it correct, all of it about a directive
+  that did nothing.
+
+  The base package's account-navigation link is
+  `customer-account-link-packagist-licences`, a different name, so this removal
+  never touched it and the navigation route was never at risk.
+
+### Added
+- **`EveryLayoutRemovalNamesSomethingRealTest`** — every `remove="true"` must
+  name a block something declares, or be written down with the module named and
+  how its presence was confirmed.
+
 ### Changed
 - **Both view models now call the base package's `TokenReleaseService`**
   (M2MAP-269). The ACTIVE-only rule, the null-token check and the
