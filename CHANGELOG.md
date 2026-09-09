@@ -5,7 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.1.0] - 2026-09-09
+
+### Changed
+- **Requires base `^1.1`, not `^1.0`** — a correction, not a routine bump. This
+  package constructor-injects `BlueFairy\PackagistProvisioner\Model\GuestLookupService`
+  and `\Model\TokenReleaseService`, and **neither class exists at base v1.0.0** —
+  checked by asking git for the file at that tag, with a control (`claimPending`,
+  absent at v1.0.0 and present on `main`) proving the check can tell the two
+  apart. Under `^1.0`, Composer was free to resolve base 1.0.0 alongside this
+  package and produce a fatal on a class that is not there.
+- **`composer.json` description no longer advertises a "My Extensions tab".**
+  M2MAP-268 removed that tab; the account page is **My Licences**. The
+  description is the text Packagist shows on the package page, so it was a
+  customer-visible claim about a feature that had been deleted.
+
 
 ### Changed
 - **The PHP constraint is bounded** (M2MAP-280). `composer.json` said `>=8.1`
