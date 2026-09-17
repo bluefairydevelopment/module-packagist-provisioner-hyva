@@ -15,6 +15,8 @@ use BlueFairy\PackagistProvisionerHyva\ViewModel\OrderLicenceViewModel;
 use BlueFairy\PackagistProvisioner\Model\TokenReleaseService;
 use Magento\Framework\Encryption\EncryptorInterface;
 use PHPUnit\Framework\MockObject\MockObject;
+use Magento\Framework\Registry;
+use Magento\Sales\Api\Data\OrderInterface;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -29,6 +31,8 @@ class OrderLicenceViewModelTest extends TestCase
     private $encryptor;
     /** @var StepUpSession&MockObject */
     private $stepUpSession;
+    /** @var Registry&MockObject */
+    private $registry;
 
     private OrderLicenceViewModel $viewModel;
 
@@ -37,6 +41,7 @@ class OrderLicenceViewModelTest extends TestCase
         $this->licenceRepository = $this->createMock(LicenceRepositoryInterface::class);
         $this->encryptor         = $this->createMock(EncryptorInterface::class);
         $this->stepUpSession     = $this->createMock(StepUpSession::class);
+        $this->registry          = $this->createMock(Registry::class);
 
         // Verified by default - see the note in LicenceListViewModelTest.
         $this->stepUpSession->method('isVerified')->willReturn(true);
@@ -48,7 +53,8 @@ class OrderLicenceViewModelTest extends TestCase
             // behaviour, which now live in the service - mocking it would leave
             // them asserting nothing.
             new TokenReleaseService($this->encryptor),
-            $this->stepUpSession
+            $this->stepUpSession,
+            $this->registry
         );
     }
 
@@ -179,8 +185,44 @@ class OrderLicenceViewModelTest extends TestCase
             // behaviour, which now live in the service - mocking it would leave
             // them asserting nothing.
             new TokenReleaseService($this->encryptor),
-            $stepUp
+            $stepUp,
+            $this->registry
         );
+    }
+
+    /**
+     * M2MAP-624. The block read `$block->getData('order_id')`, which nothing set, so
+     * it had never rendered. The order now comes from the registry entry Magento's
+     * own order-view blocks read - and from nowhere else.
+     */
+    public function testTheCurrentOrderIdComesFromTheRegistry(): void
+    {
+        $order = $this->createMock(OrderInterface::class);
+        $order->method('getEntityId')->willReturn(183);
+        $this->registry->method('registry')->with('current_order')->willReturn($order);
+
+        self::assertSame(183, $this->viewModel->getCurrentOrderId());
+    }
+
+    public function testOffAnOrderViewPageTheCurrentOrderIdIsZero(): void
+    {
+        $this->registry->method('registry')->willReturn(null);
+        self::assertSame(0, $this->viewModel->getCurrentOrderId());
+    }
+
+    /**
+     * The template must ask the view model, never the request: an order id taken
+     * from a request parameter would render another customer's credentials.
+     * Control: the same predicate finds getCurrentOrderId(), which the template
+     * must call.
+     */
+    public function testTheTemplateTakesTheOrderFromTheViewModelAndNotFromTheRequest(): void
+    {
+        $template = (string) file_get_contents(dirname(__DIR__, 3) . '/view/frontend/templates/order/credentials.phtml');
+        self::assertStringContainsString('getCurrentOrderId()', $template, 'CONTROL: the template no longer asks the view model for the order');
+        foreach (["getData('order_id')", 'getParam(', 'getRequest()'] as $forbidden) {
+            self::assertStringNotContainsString($forbidden, $template, 'the order-view template reads the order from ' . $forbidden);
+        }
     }
 
     private function licence(string $status, ?string $token): LicenceInterface
