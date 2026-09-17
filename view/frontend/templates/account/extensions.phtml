@@ -127,15 +127,17 @@ $licences = $viewModel->getLicences();
            going to be redirected anyway, and was missing in the state the
            README describes.
 
-           It matters because My Licences is where Renew lives, and this is the
-           page a customer lands on after signing in. Inside the loop the link
-           is conditional on there being a licence AND on that licence's state;
-           here it is the block's own link, and it renders for the empty case
-           too - a customer whose licence has expired off this list still needs
-           the page that sells them a renewal. */ ?>
+           It matters because My Licences is where the token and the expiry
+           live, and this is the page a customer lands on after signing in.
+           Inside the loop the link is conditional on there being a licence AND
+           on that licence's state; here it is the block's own link, and it
+           renders for the empty case too - a customer whose licence has expired
+           off this list still needs the page that shows them what expired.
+           (1.2.0, M2MAP-619: the storefront Renew control is gone - a renewal
+           is a second purchase - so the label no longer promises one.) */ ?>
         <p class="mt-4 text-sm">
             <a href="<?= $escaper->escapeUrl($block->getUrl('customer/account/licences')) ?>"
-               class="text-blue-600 hover:underline"><?= $escaper->escapeHtml(__('Manage licences and renewals')) ?> &rarr;</a>
+               class="text-blue-600 hover:underline"><?= $escaper->escapeHtml(__('Manage licences')) ?> &rarr;</a>
         </p>
     </div>
 </div>
