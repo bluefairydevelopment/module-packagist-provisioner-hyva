@@ -56,14 +56,49 @@ class TheReleaseGateIsArmedTest extends TestCase
         self::assertTrue(is_executable(self::root() . '/.githooks/pre-push'), 'the hook is not executable, so git will not run it');
     }
 
+    /**
+     * OVER THE EXECUTABLE LINES ONLY. The first version of this test matched the
+     * whole file, and the hook's own header comment names every gate - so a hook
+     * with all four `gate` calls deleted stayed green (frozen-round finding,
+     * 2026-09-17). Comment lines are stripped first; the control below proves
+     * a comment-only mention no longer satisfies the predicate.
+     */
     public function testTheHookRunsEveryGateOnATagPush(): void
     {
-        $hook = (string) file_get_contents(self::root() . '/.githooks/pre-push');
-        self::assertStringContainsString('refs/tags/', $hook, 'the hook does not distinguish a tag push');
+        $code = self::executableLines((string) file_get_contents(self::root() . '/.githooks/pre-push'));
+        self::assertStringContainsString('refs/tags/', $code, 'the hook does not distinguish a tag push');
         foreach (['phpunit', 'phpcs', 'phpstan', 'composer validate'] as $gate) {
-            self::assertStringContainsString($gate, $hook, "the hook no longer runs {$gate} on a tag push");
+            self::assertMatchesRegularExpression(
+                '/^\s*gate \S+ .*' . preg_quote($gate, '/') . '/m',
+                $code,
+                "the hook no longer runs {$gate} through gate() on a tag push"
+            );
         }
-        self::assertStringContainsString('MAGENTO_ROOT', $hook, 'the hook does not require a Magento root, so phpstan would run against nothing');
+        self::assertStringContainsString('MAGENTO_ROOT', $code, 'the hook does not require a Magento root, so phpstan would run against nothing');
+    }
+
+    public function testACommentNamingAGateDoesNotCountAsRunningIt(): void
+    {
+        $specimen = "#!/usr/bin/env bash\n# this hook runs phpunit, phpcs, phpstan and composer validate\n# on refs/tags/* pushes\nexit 0\n";
+        $code = self::executableLines($specimen);
+        self::assertStringNotContainsString('phpunit', $code, 'CONTROL: the comment stripper left a gate name from a comment');
+        self::assertDoesNotMatchRegularExpression('/^\s*gate /m', $code);
+
+        $real = "gate phpunit env MAGENTO_ROOT=x phpunit -c phpunit.xml.dist\n";
+        self::assertMatchesRegularExpression('/^\s*gate \S+ .*phpunit/m', self::executableLines($real), 'CONTROL: a real gate line was not recognised');
+    }
+
+    /** Shell source with every comment line and every trailing comment removed. */
+    private static function executableLines(string $shell): string
+    {
+        $kept = [];
+        foreach (explode("\n", $shell) as $line) {
+            $stripped = preg_replace('/^\s*#.*$/', '', $line);
+            if (trim((string) $stripped) !== '') {
+                $kept[] = $stripped;
+            }
+        }
+        return implode("\n", $kept);
     }
 
     public function testTheHookDoesNotShipToMerchants(): void

@@ -48,13 +48,21 @@ class TokenReleaseHasOneImplementationTest extends TestCase
             'the file sweep found almost nothing, so a clean result would mean nothing'
         );
 
+        // THE NEEDLE CONTROL. This package authorises nothing, so nothing in it can
+        // prove the needle works; the base package's release service is the specimen.
+        // Its path is resolved through composer's vendor layout OR the sibling checkout.
+        $needle = '->decrypt(';
+        $base   = self::baseReleaseService($root);
+        $this->assertIsString($base, 'CONTROL: the base package\'s TokenReleaseService could not be found, so the needle is unproven');
+        $this->assertStringContainsString($needle, (string) file_get_contents($base), 'CONTROL: the needle does not match the base release service');
+
         $offenders = [];
         foreach ($files as $file) {
             $relative = substr($file, strlen($root) + 1);
             if (in_array($relative, self::AUTHORISED, true)) {
                 continue;
             }
-            if (str_contains((string) file_get_contents($file), '->decrypt(')) {
+            if (str_contains((string) file_get_contents($file), $needle)) {
                 $offenders[] = $relative;
             }
         }
@@ -74,6 +82,22 @@ class TokenReleaseHasOneImplementationTest extends TestCase
                 implode("\n  ", $offenders)
             )
         );
+    }
+
+    /** The base package's release service: the sibling checkout first, then composer's vendor. */
+    private static function baseReleaseService(string $root): ?string
+    {
+        foreach ([
+            dirname($root) . '/module-packagist-provisioner/Model/TokenReleaseService.php',
+            dirname($root, 2) . '/module-packagist-provisioner/Model/TokenReleaseService.php',
+        ] as $candidate) {
+            if (is_file($candidate)) {
+                return $candidate;
+            }
+        }
+        $magentoRoot = getenv('MAGENTO_ROOT') ?: '';
+        $vendor = $magentoRoot . '/vendor/bluefairy/module-packagist-provisioner/Model/TokenReleaseService.php';
+        return is_file($vendor) ? $vendor : null;
     }
 
     /**

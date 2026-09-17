@@ -17,7 +17,7 @@
     excluded for that reason.
 -->
 <ruleset name="BlueFairyPackagistProvisionerHyva">
-    <description>Magento 2 coding standard for module-packagist-provisioner.</description>
+    <description>Magento 2 coding standard for module-packagist-provisioner-hyva.</description>
 
     <rule ref="Magento2">
         <exclude name="Magento2.Annotation.MethodAnnotationStructure"/>

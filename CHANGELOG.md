@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed — frozen review round, 2026-09-17
+- **The order-view credentials block had never rendered.** M2MAP-624, HIGH.
+  `order/credentials.phtml` read `$block->getData('order_id')` and no layout set
+  it, so `getLicencesForOrder(0)` was always empty. The view model now reads the
+  registry's `current_order` - what Magento's own order-view blocks read, and the
+  customer's own order by construction - and NEVER a request parameter, which
+  would let a customer render another customer's credentials. Three tests, one of
+  them pinning the template to the view model and away from the request.
+- **Every "view your token in My Licences" route landed on a page with no
+  token.** M2MAP-632, HIGH. The credentials emails, the Verify redirect and the
+  dashboard's own link all go to My Licences; this theme's page deliberately
+  showed none. It now shows the masked token with Reveal/Copy and the repository
+  URL for ACTIVE licences after step-up, as Luma's always has.
+  `TheLicencesPageShowsTheTokenTheEmailsPromiseTest` pins it against the emails'
+  wording.
+- **The free storefront Renew button removed** with the base package's
+  M2MAP-619; a repurchase prompt replaces it.
+- README corrected in six places: the dashboard block is titled *My Licences*,
+  not *My Extensions* (M2MAP-268); the base constraint is `^1.1`; the step-up
+  window is 15 minutes, not the browser session; the dashboard lists every
+  status; the token IS shown on My Licences; troubleshooting says licences attach
+  by customer account, not by email. `phpcs.xml.dist`'s description named the
+  base package.
+- `TheReleaseGateIsArmedTest` and `TokenReleaseHasOneImplementationTest` given
+  the same instrument fixes as the base package (executable lines only; needle
+  control against the base package's release service).
+
 ### Added
 - **The Tailwind `@source` line is pinned.** M2MAP-609 (per-module child of
   M2MAP-474). Every utility class in this package's five templates reaches the

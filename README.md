@@ -1,6 +1,6 @@
 # BlueFairy_PackagistProvisionerHyva
 
-Hyvä theme frontend for `BlueFairy_PackagistProvisioner`. Adds a My Extensions block to the customer account dashboard and a full My Licences page with step-up password verification and token credential display.
+Hyvä theme frontend for `BlueFairy_PackagistProvisioner`. Adds a **My Licences** block to the customer account dashboard and a full My Licences page, both behind step-up password verification, both showing the masked token with Reveal/Copy.
 
 ---
 
@@ -15,7 +15,7 @@ safe because Composer installs only the intersection with your Magento release's
 own PHP requirement — 2.4.9 requires `~8.3.0||~8.4.0||~8.5.0`, so an incoherent
 pair cannot be selected whatever this package says.
 - [Hyvä Theme](https://hyva.io) 1.3+
-- [`bluefairy/module-packagist-provisioner`](https://github.com/bluefairydevelopment/module-packagist-provisioner) ^1.0
+- [`bluefairy/module-packagist-provisioner`](https://github.com/bluefairydevelopment/module-packagist-provisioner) ^1.1
 
 ---
 
@@ -84,7 +84,7 @@ bin/magento cache:flush
 
 ### My Licences — Dashboard Block
 
-A summary block appears on the customer account dashboard (below the address panel) listing all active licences with status badges and a link through to the full My Licences page.
+A summary block appears on the customer account dashboard (below the address panel) listing the customer's licences of every status with status badges - the token and repository URL are shown for ACTIVE ones once verified - and a link through to the full My Licences page.
 
 ### My Licences Page
 
@@ -100,22 +100,22 @@ Accessible at `/customer/account/licences`. Shows a table of all licences with:
 
 ### Step-Up Verification
 
-Before accessing the My Licences page the customer must re-enter their password. The verified state is held in the customer session for the duration of the browser session — no additional prompts until they log out.
+Before accessing the My Licences page the customer must re-enter their password. The verified state is held in the customer session for **15 minutes** (`StepUpSession::WINDOW_SECONDS`), after which the password is asked for again.
 
 ### Renewal
 
-A **Renew** button appears on any active licence with 60 days or fewer remaining. Clicking it submits a POST to `/customer/account/renew` which reissues a new Packagist token and marks the old one revoked.
+Renewal is a repurchase: the customer buys the package again and the new order extends the licence from whichever is later, its current expiry or the order date (the base package's `ProvisioningService::handleRenewal()`). An active licence with 60 days or fewer remaining shows an *Expiring soon - purchase again to extend* prompt on My Licences. There is no free renewal control; the one that shipped through 1.1.0 issued a full-term licence with no order behind it (M2MAP-619).
 
 ---
 
 ## Troubleshooting
 
-**My Extensions block not appearing on dashboard**
+**My Licences block not appearing on dashboard**
 - Confirm `BlueFairy_PackagistProvisionerHyva` is enabled: `bin/magento module:status BlueFairy_PackagistProvisionerHyva`
 - Flush layout cache: `bin/magento cache:flush layout block_html full_page`
 
 **My Licences shows "You have no licences yet"**
-- Check that `BlueFairy_PackagistProvisioner` has provisioned licences for the logged-in customer's email in **BlueFairy → Packagist Licences**.
+- Check that `BlueFairy_PackagistProvisioner` has licences attached to the logged-in customer's **account** (customer id, not email) in **BlueFairy → Packagist Licences**. A guest purchase is attached with the grid's *Link to Customer* action.
 
 **Verify page does not redirect after password entry**
 - Ensure there is no conflicting `customer_account_verify` layout handle from another module.
