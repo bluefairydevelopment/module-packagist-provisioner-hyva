@@ -8,6 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **The Tailwind `@source` line is pinned.** M2MAP-609 (per-module child of
+  M2MAP-474). Every utility class in this package's five templates reaches the
+  compiled stylesheet through one line in `view/frontend/tailwind/module.css`,
+  and nothing checked it was there - module-jira-hyva shipped that file as
+  comment only and lost 39 of 110 class rules with no error anywhere.
+  `TailwindScansThisPackagesTemplatesTest` (ported from module-jira-hyva) asserts
+  a directive exists outside comments and that its glob reaches every shipped
+  template, with three controls: a layout XML the glob must NOT reach, a
+  commented-out `@source` that must NOT count, and a globstar path the comment
+  stripper must NOT eat. The stripper now strips `/*` as well as `/**` openers
+  (this file's comment uses the former), but only when followed by whitespace so
+  `/**/` inside a glob survives. Mutations: blanking the directive, and hiding
+  it inside a `/* */` comment, each redden two tests.
+
 - **A tag push now runs the package gates and refuses on red.** M2MAP-594.
   `.githooks/pre-push` is the base package's hook verbatim: on a `refs/tags/*`
   push it runs `composer validate`, phpunit, phpcs (warnings fatal) and phpstan
