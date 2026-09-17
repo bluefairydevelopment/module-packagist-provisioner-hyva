@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### ⚠ Licence
+- **This package declared `proprietary` in composer.json and shipped the Open
+  Software License v3.0 as `LICENSE.md`.** M2MAP-489. The file a merchant
+  receives IS the licence they hold, so every release to 1.1.0 handed them an
+  open-source grant - the right to modify and redistribute - that contradicted
+  the declaration. Replaced with `LICENSE.txt`, the Blue Fairy Development EULA
+  derived from the house instrument (product name, version, the Software
+  definition naming `BlueFairy_PackagistProvisionerHyva` as a companion licensed
+  separately from the base package, and the Private Packagist third-party
+  clause). `TheLicenceAMerchantReceivesTest` (ported from module-contact-success)
+  pins it: exactly one licence file, no open-source grant text while composer
+  says proprietary, the house instrument's own sentences present, this product
+  named and no source product's name left over, and the licence version one
+  release ahead of the newest changelog heading while this Unreleased block has
+  content. No code change. Nobody outside Blue Fairy holds any version (licence
+  server, 2026-09-16).
+
 ## [1.1.0] - 2026-09-09
 
 ### Fixed
