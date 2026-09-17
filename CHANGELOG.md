@@ -23,7 +23,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `TheLicencesPageShowsTheTokenTheEmailsPromiseTest` pins it against the emails'
   wording.
 - **The free storefront Renew button removed** with the base package's
-  M2MAP-619; a repurchase prompt replaces it.
+  M2MAP-619; a repurchase prompt replaces it. The dashboard block's link, which
+  read "Manage licences and renewals", now reads "Manage licences" - the page it
+  points at manages no renewals any more.
 - README corrected in six places: the dashboard block is titled *My Licences*,
   not *My Extensions* (M2MAP-268); the base constraint is `^1.1`; the step-up
   window is 15 minutes, not the browser session; the dashboard lists every
