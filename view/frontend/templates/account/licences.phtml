@@ -15,9 +15,14 @@ use Magento\Framework\View\Element\Template;
  * package as a Tailwind source — so the base module's classes were purged from
  * the compiled CSS and the page rendered unstyled. M2MAP-242.
  *
- * Credentials are deliberately NOT shown here. The masked-token-with-Reveal
- * surface is My Extensions on the dashboard; repeating it on a second page would
- * widen where a token can be shoulder-surfed for no requirement.
+ * Credentials ARE shown here, masked with Reveal/Copy, for ACTIVE licences once
+ * the step-up gate has passed (the base view model releases the token only then).
+ * Through 1.1.0 this page deliberately showed none - "the dashboard is the
+ * surface" - while every credentials email, the Verify redirect and the
+ * dashboard's own "Verify to view credentials" link all sent the customer HERE,
+ * where they re-entered their password and found a table with no token in it
+ * (M2MAP-632). Luma's page has always shown it; the two themes now agree with
+ * each other and with the emails.
  *
  * @var LicencesViewModel $viewModel
  * @var Template $block
@@ -101,25 +106,37 @@ $badgeClasses = [
                                     <?php endif; ?>
                                 </td>
                                 <td class="py-3 px-4 text-sm">
-                                    <div class="flex flex-col gap-2 items-start">
-                                        <?php if (!empty($licence['repo_url'])): ?>
-                                            <a href="<?= $escaper->escapeUrl((string) $licence['repo_url']) ?>"
-                                               class="text-blue-600 hover:text-blue-800 underline text-xs"
-                                               target="_blank"
-                                               rel="noopener noreferrer">
-                                                <?= $escaper->escapeHtml(__('View Credentials')) ?>
-                                            </a>
+                                    <div class="flex flex-col gap-2 items-start"
+                                         x-data="{
+                                             tokenVisible: false,
+                                             copied: false,
+                                             copyText(text) {
+                                                 if (navigator.clipboard) {
+                                                     navigator.clipboard.writeText(text).then(() => { this.copied = true; setTimeout(() => this.copied = false, 2000); });
+                                                 }
+                                             }
+                                         }">
+                                        <?php $token = (string) ($licence['decrypted_token'] ?? ''); ?>
+                                        <?php if ($token !== ''): ?>
+                                            <div class="flex items-center gap-2">
+                                                <span class="text-xs text-gray-500 shrink-0"><?= $escaper->escapeHtml(__('Token')) ?></span>
+                                                <code class="text-xs bg-gray-100 px-2 py-1 rounded truncate max-w-[12rem]" x-text="tokenVisible ? '<?= $escaper->escapeJs($token) ?>' : '●●●●●●●●●●●●●●●●●●●●'"></code>
+                                                <button type="button" @click="tokenVisible = !tokenVisible" class="text-xs text-blue-600 hover:underline shrink-0" x-text="tokenVisible ? '<?= $escaper->escapeJs(__('Hide')->render()) ?>' : '<?= $escaper->escapeJs(__('Reveal')->render()) ?>'"></button>
+                                                <button type="button" @click="copyText('<?= $escaper->escapeJs($token) ?>')" class="text-xs text-blue-600 hover:underline shrink-0" x-show="tokenVisible"><?= $escaper->escapeHtml(__('Copy')) ?></button>
+                                            </div>
+                                            <p x-show="copied" class="text-xs text-green-600"><?= $escaper->escapeHtml(__('Copied!')) ?></p>
                                         <?php endif; ?>
-                                        <?php if (!empty($licence['show_renewal_button'])): ?>
-                                            <form action="<?= $escaper->escapeUrl($block->getUrl('customer/account/renew')) ?>" method="post">
-                                                <?= $block->getBlockHtml('formkey') ?>
-                                                <input type="hidden" name="licence_id"
-                                                       value="<?= $escaper->escapeHtmlAttr((string) ($licence['id'] ?? '')) ?>"/>
-                                                <button type="submit"
-                                                        class="bg-green-600 hover:bg-green-700 text-white text-xs font-medium py-1 px-3 rounded transition-colors duration-200">
-                                                    <?= $escaper->escapeHtml(__('Renew')) ?>
-                                                </button>
-                                            </form>
+                                        <?php if (!empty($licence['repo_url'])): ?>
+                                            <div class="flex items-center gap-2">
+                                                <span class="text-xs text-gray-500 shrink-0"><?= $escaper->escapeHtml(__('Repository')) ?></span>
+                                                <code class="text-xs bg-gray-100 px-2 py-1 rounded truncate max-w-[12rem]"><?= $escaper->escapeHtml((string) $licence['repo_url']) ?></code>
+                                                <button type="button" @click="copyText('<?= $escaper->escapeJs((string) $licence['repo_url']) ?>')" class="text-xs text-blue-600 hover:underline shrink-0"><?= $escaper->escapeHtml(__('Copy')) ?></button>
+                                            </div>
+                                        <?php endif; ?>
+                                        <?php if (!empty($licence['renewal_due'])): ?>
+                                            <span class="text-xs text-amber-700">
+                                                <?= $escaper->escapeHtml(__('Expiring soon - purchase again to extend.')) ?>
+                                            </span>
                                         <?php endif; ?>
                                     </div>
                                 </td>
