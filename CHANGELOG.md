@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **A tag push now runs the package gates and refuses on red.** M2MAP-594.
+  `.githooks/pre-push` is the base package's hook verbatim: on a `refs/tags/*`
+  push it runs `composer validate`, phpunit, phpcs (warnings fatal) and phpstan
+  against `MAGENTO_ROOT` and refuses on the first non-zero exit, or outright
+  without a `MAGENTO_ROOT`. `/.githooks` is no longer gitignored (it was, while
+  the file was tracked - a contradiction that hid the hook from `git status`).
+  `TheReleaseGateIsArmedTest` fails the suite until `git config core.hooksPath
+  .githooks` is set. Seen to refuse 2026-09-17 against a throwaway bare remote:
+  planted red test -> refused at phpunit; plant removed -> four gates green.
+
 ### ⚠ Licence
 - **This package declared `proprietary` in composer.json and shipped the Open
   Software License v3.0 as `LICENSE.md`.** M2MAP-489. The file a merchant

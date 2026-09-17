@@ -1,28 +1,59 @@
 #!/usr/bin/env bash
 #
-# Rejects pushes that don't include an update to CHANGELOG.md.
-# Covers both existing remote refs and first-time branch pushes.
+# pre-push for bluefairy/module-packagist-provisioner-hyva. Identical to the base package's.
+#
+# TWO JOBS, and both of them can refuse a push:
+#
+#   1. A BRANCH push must carry a CHANGELOG.md change. (Since 1.1.0; tags are
+#      skipped here because a tag names a commit already on the branch, so the
+#      "new commits" query is empty and this rule rejected every tag push.)
+#
+#   2. A TAG push must pass the package's own gates FIRST. M2MAP-594 / M2MAP-546:
+#      before this, the only check between a red suite and a published tag was
+#      the CHANGELOG heading - product-grid-export v1.0.6 was tagged with its own
+#      regression test red. Now phpunit, phpcs, phpstan and `composer validate`
+#      run against the tree being tagged and ANY non-zero exit refuses the push.
+#      Exit codes are read, never output.
+#
+# INSTALL: this file is tracked (it used to be gitignored, which made "no hook"
+# the default state of every fresh clone). One line per clone, once:
+#
+#     git config core.hooksPath .githooks
+#
+# Test/Unit/Package/TheReleaseGateIsArmedTest refuses the suite until that is
+# done, so a clone cannot forget.
+#
+# ENVIRONMENT: the gates need a Magento root with this package installed and
+# compiled. Export MAGENTO_ROOT before pushing a tag; the hook refuses a tag
+# push without it rather than run the gates against nothing (a phpstan run
+# over an uncompiled root reports 0 for the wrong reason - Gate 1 in
+# prep-m2-extension-for-sale.md).
+#
+# CONTROL: this hook has been seen to refuse. On 2026-09-17 a deliberately red
+# test was planted, `git push <bare-remote> v0.0.0-control` was attempted, and
+# the push was refused with the phpunit exit code quoted. Re-run that control
+# whenever this file changes; a release gate never seen to refuse is untested.
+
+set -u
 
 z40=0000000000000000000000000000000000000000
 has_commits=false
 changelog_updated=false
+tag_pushed=""
 
-while read local_ref local_sha remote_ref remote_sha; do
-    # Skip branch deletions
+while read -r local_ref local_sha remote_ref remote_sha; do
     [ "$local_sha" = "$z40" ] && continue
 
-    # Skip TAGS. A tag names a commit that is already on the branch, so the
-    # "new commits" query below returns nothing, `changed` is empty, and this
-    # hook rejected EVERY tag push - reporting "CHANGELOG.md has not been
-    # updated" about a commit whose diff contains CHANGELOG.md. The gate it is
-    # meant to enforce has already been enforced on the branch push that
-    # carried that commit.
-    case "$local_ref" in refs/tags/*) continue ;; esac
+    case "$local_ref" in
+        refs/tags/*)
+            tag_pushed="${local_ref#refs/tags/}"
+            continue
+            ;;
+    esac
 
     has_commits=true
 
     if [ "$remote_sha" = "$z40" ]; then
-        # New remote ref: inspect commits not yet on any remote branch
         new_commits=$(git log --format="%H" "$local_sha" --not --remotes 2>/dev/null)
         if [ -n "$new_commits" ]; then
             changed=$(echo "$new_commits" | xargs git diff-tree --no-commit-id -r --name-only | sort -u)
@@ -44,6 +75,40 @@ if $has_commits && ! $changelog_updated; then
     echo "  Add an entry to CHANGELOG.md and commit it before pushing." >&2
     echo "" >&2
     exit 1
+fi
+
+if [ -n "$tag_pushed" ]; then
+    root="$(git rev-parse --show-toplevel)"
+    cd "$root" || exit 1
+
+    if [ -z "${MAGENTO_ROOT:-}" ] || [ ! -f "${MAGENTO_ROOT}/vendor/bin/phpunit" ]; then
+        echo "" >&2
+        echo "  Tag push refused: MAGENTO_ROOT is not set to a Magento install with vendor/bin/phpunit." >&2
+        echo "  The package gates have to run against the tree being tagged. Export MAGENTO_ROOT and retry." >&2
+        echo "" >&2
+        exit 1
+    fi
+
+    echo "pre-push: running the release gates for tag ${tag_pushed} against ${MAGENTO_ROOT}" >&2
+
+    gate() {
+        local name="$1"; shift
+        "$@" >/tmp/pre-push-"$name".log 2>&1
+        local status=$?
+        if [ "$status" -ne 0 ]; then
+            echo "" >&2
+            echo "  Tag push refused: ${name} exited ${status}. Log: /tmp/pre-push-${name}.log" >&2
+            echo "  A tag is a release. Fix it, or do not tag it." >&2
+            echo "" >&2
+            exit "$status"
+        fi
+        echo "pre-push: ${name} exit 0" >&2
+    }
+
+    gate composer-validate composer validate --no-check-publish --quiet
+    gate phpunit env MAGENTO_ROOT="$MAGENTO_ROOT" "$MAGENTO_ROOT/vendor/bin/phpunit" -c phpunit.xml.dist
+    gate phpcs "$MAGENTO_ROOT/vendor/bin/phpcs" --standard=phpcs.xml.dist --warning-severity=0 -q .
+    gate phpstan env MAGENTO_ROOT="$MAGENTO_ROOT" "$MAGENTO_ROOT/vendor/bin/phpstan" analyse --no-progress --memory-limit=2G
 fi
 
 exit 0
