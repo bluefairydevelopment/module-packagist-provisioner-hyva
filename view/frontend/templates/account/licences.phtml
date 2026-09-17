@@ -116,11 +116,18 @@ $badgeClasses = [
                                                  }
                                              }
                                          }">
+                                        <?php /* The inline max-width duplicates max-w-[12rem] on purpose.
+                                           An arbitrary-value class exists only in a theme CSS that was
+                                           rebuilt after this template was registered; on a store that
+                                           has not rebuilt yet, `truncate` alone lets the value run the
+                                           full row and pushes the Copy button out of the table (seen on
+                                           the 1.2.0 walkthrough). The inline rule degrades to the same
+                                           layout either way. */ ?>
                                         <?php $token = (string) ($licence['decrypted_token'] ?? ''); ?>
                                         <?php if ($token !== ''): ?>
                                             <div class="flex items-center gap-2">
                                                 <span class="text-xs text-gray-500 shrink-0"><?= $escaper->escapeHtml(__('Token')) ?></span>
-                                                <code class="text-xs bg-gray-100 px-2 py-1 rounded truncate max-w-[12rem]" x-text="tokenVisible ? '<?= $escaper->escapeJs($token) ?>' : '●●●●●●●●●●●●●●●●●●●●'"></code>
+                                                <code class="text-xs bg-gray-100 px-2 py-1 rounded truncate max-w-[12rem]" style="max-width:12rem" x-text="tokenVisible ? '<?= $escaper->escapeJs($token) ?>' : '●●●●●●●●●●●●●●●●●●●●'"></code>
                                                 <button type="button" @click="tokenVisible = !tokenVisible" class="text-xs text-blue-600 hover:underline shrink-0" x-text="tokenVisible ? '<?= $escaper->escapeJs(__('Hide')->render()) ?>' : '<?= $escaper->escapeJs(__('Reveal')->render()) ?>'"></button>
                                                 <button type="button" @click="copyText('<?= $escaper->escapeJs($token) ?>')" class="text-xs text-blue-600 hover:underline shrink-0" x-show="tokenVisible"><?= $escaper->escapeHtml(__('Copy')) ?></button>
                                             </div>
@@ -129,7 +136,7 @@ $badgeClasses = [
                                         <?php if (!empty($licence['repo_url'])): ?>
                                             <div class="flex items-center gap-2">
                                                 <span class="text-xs text-gray-500 shrink-0"><?= $escaper->escapeHtml(__('Repository')) ?></span>
-                                                <code class="text-xs bg-gray-100 px-2 py-1 rounded truncate max-w-[12rem]"><?= $escaper->escapeHtml((string) $licence['repo_url']) ?></code>
+                                                <code class="text-xs bg-gray-100 px-2 py-1 rounded truncate max-w-[12rem]" style="max-width:12rem"><?= $escaper->escapeHtml((string) $licence['repo_url']) ?></code>
                                                 <button type="button" @click="copyText('<?= $escaper->escapeJs((string) $licence['repo_url']) ?>')" class="text-xs text-blue-600 hover:underline shrink-0"><?= $escaper->escapeHtml(__('Copy')) ?></button>
                                             </div>
                                         <?php endif; ?>

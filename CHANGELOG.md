@@ -22,6 +22,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   URL for ACTIVE licences after step-up, as Luma's always has.
   `TheLicencesPageShowsTheTokenTheEmailsPromiseTest` pins it against the emails'
   wording.
+- **The token and repository values on My Licences no longer push the Copy
+  button out of the table on a theme whose CSS has not been rebuilt.** Seen on
+  the 1.2.0 walkthrough: `max-w-[12rem]` is an arbitrary-value class that exists
+  only in a Tailwind build that has scanned this package's templates, so a store
+  that has not rebuilt yet rendered the full URL and clipped the button. An
+  inline `max-width` now backs the class. README gains step 4, *Rebuild your
+  theme's CSS*, which no version had asked for.
 - **The free storefront Renew button removed** with the base package's
   M2MAP-619; a repurchase prompt replaces it. The dashboard block's link, which
   read "Manage licences and renewals", now reads "Manage licences" - the page it

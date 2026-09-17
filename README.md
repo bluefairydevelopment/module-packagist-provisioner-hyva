@@ -78,6 +78,22 @@ bin/magento setup:di:compile
 bin/magento cache:flush
 ```
 
+### 4. Rebuild your theme's CSS
+
+This package registers its templates with Hyvä's Tailwind build
+(`view/frontend/tailwind/module.css`, picked up by `hyva:config:generate`). Hyvä
+purges every utility class its build has not seen, so until your theme's CSS is
+rebuilt the account pages render with the classes your theme already happens to
+use and nothing more - the token and repository values still fit their row, but
+badges and spacing may look off. From your theme's `web/tailwind` directory:
+
+```bash
+bin/magento hyva:config:generate
+cd app/design/frontend/<Vendor>/<theme>/web/tailwind
+npm run build-prod
+bin/magento cache:flush
+```
+
 ---
 
 ## Features
