@@ -34,6 +34,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Support contact through the base's `SupportContact` view model / `Config`.
   The order-page messages also reference the order NUMBER rather than its
   entity id (M2MAP-630's rule, missed here).
+- **The dashboard block printed the raw expiry column.** M2MAP-648 (c). It
+  now renders through the base package's `ExpiryDate::format()`, the same
+  "17 Sep 2027" as My Licences and the emails.
 - **The Hyvä guest lookup showed nothing for an EXPIRED or REVOKED licence.**
   M2MAP-648 (b). Only ACTIVE, PENDING and FAILED had branches; the Luma
   template said "Credentials unavailable" for everything else. One branch now
