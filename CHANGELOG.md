@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.2.0] - 2026-09-18
 
+### Fixed — release blocker, found at the tag
+- **Requires base `^1.2`, not `^1.1`** — a correction, not a routine bump, and
+  the same defect as the `^1.0` corrected one release ago. This package began
+  referencing `Model\ExpiryDate` and `ViewModel\SupportContact` at 1.2.0.
+  **Neither class exists at base v1.1.0** (asked git for the file at the tag),
+  so Composer was free to resolve base 1.1.0 beside this package and the Hyvä
+  storefront would have fatalled on a missing class. Found in the pre-tag
+  check, before anything was published.
+  `TheBaseContractThisPackageConstructsTest` no longer keeps the base-class
+  list by hand — the list that missed both of these. It now DERIVES every base
+  class named in production code, requires each to be declared with the base
+  version that first shipped it, and asserts the constraint floor is at least
+  the highest of those. Restoring `^1.1` fails it with "requires the base at a
+  floor of 1.1.0, but this package uses a class that first shipped in base
+  1.2.0"; the derived sweep also caught `Model\Mailer` sitting in the list
+  while being referenced only as another test's control.
+
 ### Fixed — frozen review round, 2026-09-17
 - **The order-view credentials block had never rendered.** M2MAP-624, HIGH.
   `order/credentials.phtml` read `$block->getData('order_id')` and no layout set

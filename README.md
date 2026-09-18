@@ -15,7 +15,7 @@ safe because Composer installs only the intersection with your Magento release's
 own PHP requirement — 2.4.9 requires `~8.3.0||~8.4.0||~8.5.0`, so an incoherent
 pair cannot be selected whatever this package says.
 - [Hyvä Theme](https://hyva.io) 1.3+
-- [`bluefairy/module-packagist-provisioner`](https://github.com/bluefairydevelopment/module-packagist-provisioner) ^1.1
+- [`bluefairy/module-packagist-provisioner`](https://github.com/bluefairydevelopment/module-packagist-provisioner) ^1.2
 
 ---
 

@@ -6,7 +6,7 @@
     "require": {
         "php": "~8.1.0 || ~8.2.0 || ~8.3.0 || ~8.4.0 || ~8.5.0",
         "magento/framework": "^103.0 || ^104.0",
-        "bluefairy/module-packagist-provisioner": "^1.1",
+        "bluefairy/module-packagist-provisioner": "^1.2",
         "hyva-themes/magento2-theme-module": "^1.1.15"
     },
     "autoload": {
