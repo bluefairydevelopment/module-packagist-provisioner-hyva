@@ -22,6 +22,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   URL for ACTIVE licences after step-up, as Luma's always has.
   `TheLicencesPageShowsTheTokenTheEmailsPromiseTest` pins it against the emails'
   wording.
+- **This package ships a FEATURES.md and four images, for the first time.**
+  Every other Hyvä package in the estate does; this one shipped README only.
+  FEATURES.md walks the dashboard block, the My Licences page, the guest
+  lookup, the step-up, the order-page block and whose support address the copy
+  names; the four captures are the 1.2.0 walkthrough's, pinned in
+  `docs/images/REVIEWED.md` with what is in frame and what was redacted
+  (`ShippedImagesAreReviewedTest`, ported from the base, seen red on an edited
+  byte count; `EveryShippedImageIsReadTest` refuses an image no document
+  points at, seen red on a planted orphan). README's My Licences table no
+  longer lists a View Credentials link and a Renew button the page does not
+  have.
 - **The base classes this package constructs are held to their signatures.**
   M2MAP-649. `GuestLookupService::lookup()`, `TokenReleaseService::release()`
   and `StepUpSession::isVerified()` are called under a `^1.1` constraint;

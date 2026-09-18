@@ -112,7 +112,7 @@ Accessible at `/customer/account/licences`. Shows a table of all licences with:
 | Order | Order increment ID |
 | Status | Colour-coded badge (Active / Pending / Expired / Revoked / Failed) |
 | Expires | Formatted date with days-remaining countdown |
-| Actions | View Credentials link (opens `repo_url`), Renew button (≤ 60 days remaining) |
+| Actions | The token, masked, with Reveal and Copy; the repository URL with Copy; and *Expiring soon - purchase again to extend.* on an ACTIVE licence inside 60 days |
 
 ### Step-Up Verification
 
