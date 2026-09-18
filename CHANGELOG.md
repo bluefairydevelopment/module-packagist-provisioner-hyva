@@ -22,6 +22,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   URL for ACTIVE licences after step-up, as Luma's always has.
   `TheLicencesPageShowsTheTokenTheEmailsPromiseTest` pins it against the emails'
   wording.
+- **The base classes this package constructs are held to their signatures.**
+  M2MAP-649. `GuestLookupService::lookup()`, `TokenReleaseService::release()`
+  and `StepUpSession::isVerified()` are called under a `^1.1` constraint;
+  `TheBaseContractThisPackageConstructsTest` asserts each signature and the
+  base's new `@api` marker, with a class this package does not construct as
+  the control.
 - **The "credentials unavailable" copy names the STORE's support address,
   not Blue Fairy's.** M2MAP-639, with the base package: the dashboard block,
   the guest lookup and the order-page view model read the store's Customer
