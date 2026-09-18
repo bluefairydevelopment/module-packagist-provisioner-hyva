@@ -96,9 +96,9 @@ class TailwindScansThisPackagesTemplatesTest extends TestCase
 
         $templates = glob(self::packageRoot() . '/view/frontend/templates/*/*.phtml') ?: [];
         // A floor, not an exact count: the point is that an empty search space
-        // cannot pass. Two templates ship today; if that drops to zero the glob
-        // below would be trivially satisfied.
-        // Five ship in this package (order/, packagist/, account/ x3); the floor sits below.
+        // cannot pass. Five templates ship in this package (order/, packagist/,
+        // account/ x3); the floor sits below, and if the count ever drops to
+        // zero the glob below would be trivially satisfied.
         self::assertGreaterThanOrEqual(
             3,
             count($templates),
