@@ -35,7 +35,11 @@ class OrderLicenceViewModel implements ArgumentInterface
         // order by construction (the controller has already refused any other).
         // NEVER a request parameter: an `order_id` read from the request would
         // let a signed-in customer render another customer's credentials.
-        private readonly Registry $registry
+        private readonly Registry $registry,
+        // M2MAP-639. The store's Customer Support address for the two messages
+        // that name one; Blue Fairy's own was written into them.
+        private readonly \BlueFairy\PackagistProvisioner\Model\Config $config,
+        private readonly \Magento\Store\Model\StoreManagerInterface $storeManager
     ) {
     }
 
@@ -88,19 +92,30 @@ class OrderLicenceViewModel implements ArgumentInterface
     {
         return sprintf(
             'Your credentials for %s are being prepared. This usually takes less than 2 minutes. '
-            . 'If this message persists after 15 minutes, contact support@bluefairydevelopment.com with Order #%d.',
+            . 'If this message persists after 15 minutes, contact %s with Order #%s.',
             $licence->getPackageName(),
-            $licence->getOrderId()
+            $this->supportEmail(),
+            $licence->getOrderIncrementId() ?: (string) $licence->getOrderId()
         );
     }
 
     public function getFailedMessage(LicenceInterface $licence): string
     {
         return sprintf(
-            'There was a problem provisioning your credentials for %s — Reference: Order #%d. '
-            . 'Please contact support@bluefairydevelopment.com.',
+            'There was a problem provisioning your credentials for %s — Reference: Order #%s. '
+            . 'Please contact %s.',
             $licence->getPackageName(),
-            $licence->getOrderId()
+            $licence->getOrderIncrementId() ?: (string) $licence->getOrderId(),
+            $this->supportEmail()
         );
+    }
+
+    /**
+     * @return string the store's Customer Support address, or 'the store' when unset
+     */
+    private function supportEmail(): string
+    {
+        $email = $this->config->getSupportEmail((int) $this->storeManager->getStore()->getId());
+        return $email === '' ? 'the store' : $email;
     }
 }

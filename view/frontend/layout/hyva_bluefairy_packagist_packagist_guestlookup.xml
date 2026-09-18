@@ -30,6 +30,8 @@
                         template="BlueFairy_PackagistProvisionerHyva::packagist/guest_lookup.phtml">
             <arguments>
                 <argument name="view_model" xsi:type="object">BlueFairy\PackagistProvisionerHyva\ViewModel\GuestLookupViewModel</argument>
+                <!-- M2MAP-639: the store's own support address, not ours. -->
+                <argument name="support_contact" xsi:type="object">BlueFairy\PackagistProvisioner\ViewModel\SupportContact</argument>
             </arguments>
         </referenceBlock>
     </body>

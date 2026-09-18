@@ -1,5 +1,6 @@
 <?php declare(strict_types=1);
 
+use BlueFairy\PackagistProvisioner\ViewModel\SupportContact;
 use BlueFairy\PackagistProvisionerHyva\ViewModel\GuestLookupViewModel;
 use BlueFairy\PackagistProvisioner\Api\Data\LicenceInterface;
 use Magento\Framework\Escaper;
@@ -18,6 +19,8 @@ use Magento\Framework\View\Element\Template;
  */
 
 $viewModel = $block->getData('view_model');
+/** @var SupportContact $supportContact */
+$supportContact = $block->getData('support_contact');
 
 // The block is never given a `form_key` argument in layout, so reading one from
 // it always yielded '' and every lookup would have failed CSRF. Ask the view
@@ -112,8 +115,11 @@ $formKey = $viewModel->getFormKey();
                     <template x-if="entry.status === 'PENDING'">
                         <p class="text-sm text-blue-700 mt-2"><?= $escaper->escapeHtml(__('Your credentials are being prepared. Please check back shortly.')) ?></p>
                     </template>
-                    <template x-if="entry.status === 'FAILED'">
-                        <p class="text-sm text-red-700 mt-2"><?= $escaper->escapeHtml(__('Credentials unavailable. Contact support@bluefairydevelopment.com with your order number.')) ?></p>
+                    <?php /* M2MAP-648 (b). One branch for every state that is not ACTIVE or PENDING -
+                       FAILED, EXPIRED and REVOKED - where the Luma template already had one and this
+                       one showed nothing at all for an expired or revoked licence. */ ?>
+                    <template x-if="entry.status !== 'ACTIVE' && entry.status !== 'PENDING'">
+                        <p class="text-sm text-red-700 mt-2"><?= $escaper->escapeHtml($supportContact->getUnavailableMessage()) ?></p>
                     </template>
                 </div>
             </template>

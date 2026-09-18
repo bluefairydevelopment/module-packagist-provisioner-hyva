@@ -22,6 +22,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   URL for ACTIVE licences after step-up, as Luma's always has.
   `TheLicencesPageShowsTheTokenTheEmailsPromiseTest` pins it against the emails'
   wording.
+- **The "credentials unavailable" copy names the STORE's support address,
+  not Blue Fairy's.** M2MAP-639, with the base package: the dashboard block,
+  the guest lookup and the order-page view model read the store's Customer
+  Support contact through the base's `SupportContact` view model / `Config`.
+  The order-page messages also reference the order NUMBER rather than its
+  entity id (M2MAP-630's rule, missed here).
+- **The Hyvä guest lookup showed nothing for an EXPIRED or REVOKED licence.**
+  M2MAP-648 (b). Only ACTIVE, PENDING and FAILED had branches; the Luma
+  template said "Credentials unavailable" for everything else. One branch now
+  covers every state that is not ACTIVE or PENDING.
 - **The token and repository values on My Licences no longer push the Copy
   button out of the table on a theme whose CSS has not been rebuilt.** Seen on
   the 1.2.0 walkthrough: `max-w-[12rem]` is an arbitrary-value class that exists

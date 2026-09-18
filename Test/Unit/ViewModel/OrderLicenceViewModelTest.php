@@ -12,7 +12,9 @@ use BlueFairy\PackagistProvisioner\Api\Data\LicenceInterface;
 use BlueFairy\PackagistProvisioner\Api\LicenceRepositoryInterface;
 use BlueFairy\PackagistProvisioner\Model\Auth\StepUpSession;
 use BlueFairy\PackagistProvisionerHyva\ViewModel\OrderLicenceViewModel;
+use BlueFairy\PackagistProvisioner\Model\Config;
 use BlueFairy\PackagistProvisioner\Model\TokenReleaseService;
+use Magento\Store\Model\StoreManagerInterface;
 use Magento\Framework\Encryption\EncryptorInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use Magento\Framework\Registry;
@@ -33,6 +35,10 @@ class OrderLicenceViewModelTest extends TestCase
     private $stepUpSession;
     /** @var Registry&MockObject */
     private $registry;
+    /** @var Config&MockObject */
+    private $config;
+    /** @var StoreManagerInterface&MockObject */
+    private $storeManager;
 
     private OrderLicenceViewModel $viewModel;
 
@@ -46,6 +52,14 @@ class OrderLicenceViewModelTest extends TestCase
         // Verified by default - see the note in LicenceListViewModelTest.
         $this->stepUpSession->method('isVerified')->willReturn(true);
 
+        // M2MAP-639. The store's Customer Support address, from Magento's own config.
+        $this->config = $this->createMock(Config::class);
+        $this->config->method('getSupportEmail')->willReturn('help@merchant.example');
+        $store = $this->createMock(\Magento\Store\Api\Data\StoreInterface::class);
+        $store->method('getId')->willReturn(1);
+        $this->storeManager = $this->createMock(StoreManagerInterface::class);
+        $this->storeManager->method('getStore')->willReturn($store);
+
         $this->viewModel = new OrderLicenceViewModel(
             $this->licenceRepository,
             // M2MAP-269. The REAL release service over a mocked encryptor.
@@ -54,7 +68,9 @@ class OrderLicenceViewModelTest extends TestCase
             // them asserting nothing.
             new TokenReleaseService($this->encryptor),
             $this->stepUpSession,
-            $this->registry
+            $this->registry,
+            $this->config,
+            $this->storeManager
         );
     }
 
@@ -134,7 +150,9 @@ class OrderLicenceViewModelTest extends TestCase
         foreach ([$this->viewModel->getPendingMessage($licence), $this->viewModel->getFailedMessage($licence)] as $message) {
             self::assertStringContainsString('bluefairy/module-mailchimp', $message);
             self::assertStringContainsString('4242', $message);
-            self::assertStringContainsString('support@bluefairydevelopment.com', $message);
+            // M2MAP-639: the STORE's support address, never Blue Fairy's.
+            self::assertStringContainsString('help@merchant.example', $message);
+            self::assertStringNotContainsString('bluefairydevelopment.com', $message);
         }
     }
 
@@ -186,7 +204,9 @@ class OrderLicenceViewModelTest extends TestCase
             // them asserting nothing.
             new TokenReleaseService($this->encryptor),
             $stepUp,
-            $this->registry
+            $this->registry,
+            $this->config,
+            $this->storeManager
         );
     }
 
