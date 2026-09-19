@@ -6,7 +6,7 @@ Hyvä theme frontend for `BlueFairy_PackagistProvisioner`. Adds a **My Licences*
 
 ## Requirements
 
-- Magento 2.4.4+
+- Magento 2.4.8 – 2.4.9 (the versions this has been run on; see the base package README)
 - PHP 8.1 – 8.5
 
 The PHP constraint is enumerated (`~8.1.0 || … || ~8.5.0`) rather than `>=8.1`,
