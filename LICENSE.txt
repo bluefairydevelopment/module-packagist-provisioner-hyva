@@ -2,7 +2,7 @@ BLUE FAIRY DEVELOPMENT LLC
 END USER LICENSE AGREEMENT
 
 Packagist Provisioner for Hyvä for Adobe Commerce and Magento Open Source
-Version 1.2.0
+Version 1.2.1
 
 Copyright (c) Blue Fairy Development LLC, a Texas limited liability company.
 All rights reserved.

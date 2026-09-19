@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- **FEATURES.md described the guest lookup as a working customer journey without
+  saying that nothing links to it.** M2MAP-653. Neither package ships a
+  navigation item, footer link or block pointing at
+  `/bluefairy/packagist/guestlookup`; the base package's emails are a customer's
+  only route. Noted here and cured properly in the base package, whose README
+  carries the merchant instruction and whose four customer emails now all offer
+  the guest line.
+
 ## [1.2.0] - 2026-09-18
 
 ### Fixed — release blocker, found at the tag

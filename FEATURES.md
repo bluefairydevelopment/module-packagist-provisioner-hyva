@@ -51,6 +51,12 @@ one does not.
 `/bluefairy/packagist/guestlookup`, for a customer who checked out as a guest. The
 Hyvä form posts as JSON and renders the result in place:
 
+> **Neither package links this page — the merchant must surface it.** No navigation item, footer
+> link or block in either package points at it, so out of the box the base package's credentials
+> and notification emails are a customer's only route to it. See the base package's README under
+> *Guest Credential Retrieval* (M2MAP-653).
+
+
 ![The guest lookup form](docs/images/guest-lookup.png)
 
 ![A successful lookup](docs/images/guest-lookup-result.png)
