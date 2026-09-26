@@ -119,4 +119,122 @@ class TheReleaseGateIsArmedTest extends TestCase
             . "    git config core.hooksPath .githooks\n"
         );
     }
+
+    /**
+     * M2MAP-656, RUN RATHER THAN READ. Each case builds a throwaway repository, then feeds the
+     * hook the four fields git writes on its stdin. Refusals are checked by exit status and, for
+     * the tag rule, by message; every refusal has an acceptance beside it, so a hook that refuses
+     * everything cannot pass - and the original defect WAS a hook refusing everything.
+     */
+    public function testTheBranchRuleSeesEveryCommitOfAMultiCommitFirstPush(): void
+    {
+        $first = 'printf a > a.php && git add a.php && git commit -q -m a'
+            . ' && printf x > CHANGELOG.md && git add CHANGELOG.md && git commit -q -m cl'
+            . ' && printf b > b.php && git add b.php && git commit -q -m b';
+        self::assertSame(0, self::runHook($first, 'refs/heads/main $(git rev-parse HEAD) refs/heads/main ' . self::Z40)[0],
+            'a three-commit first push with CHANGELOG.md in the middle commit was refused (the M2MAP-656 defect)');
+
+        $none = 'printf a > a.php && git add a.php && git commit -q -m a'
+            . ' && printf b > b.php && git add b.php && git commit -q -m b'
+            . ' && printf c > c.php && git add c.php && git commit -q -m c';
+        self::assertSame(1, self::runHook($none, 'refs/heads/main $(git rev-parse HEAD) refs/heads/main ' . self::Z40)[0],
+            'CONTROL: a three-commit first push with no CHANGELOG.md change was accepted');
+    }
+
+    public function testTheBranchRuleSeesACommitAndItsRevertOnAnExistingBranch(): void
+    {
+        $setup = 'printf base > a.php && git add a.php && git commit -q -m base && old=$(git rev-parse HEAD)'
+            . ' && printf change >> a.php && git commit -q -am change && git revert --no-edit HEAD >/dev/null';
+        self::assertSame(1, self::runHook($setup, 'refs/heads/main $(git rev-parse HEAD) refs/heads/main $old')[0],
+            'a commit and its revert on an existing branch slipped past the changelog rule');
+        self::assertSame(0, self::runHook($setup . ' && printf x > CHANGELOG.md && git add CHANGELOG.md && git commit -q -m cl',
+            'refs/heads/main $(git rev-parse HEAD) refs/heads/main $old')[0], 'CONTROL: the same push with a changelog was refused');
+    }
+
+    public function testAMergeCountsOnlyWhatItIntroduces(): void
+    {
+        // A changelog written while resolving the merge counts (--cc sees it; no flag would not).
+        $inMerge = 'printf base > a.php && git add a.php && git commit -q -m base && old=$(git rev-parse HEAD)'
+            . ' && git checkout -q -b side && printf s > s.php && git add s.php && git commit -q -m side'
+            . ' && git checkout -q main && printf m > m.php && git add m.php && git commit -q -m main'
+            . ' && (git merge -q --no-ff --no-commit side >/dev/null 2>&1 || true)'
+            . ' && printf x > CHANGELOG.md && git add CHANGELOG.md && git commit -q -m merge';
+        self::assertSame(0, self::runHook($inMerge, 'refs/heads/main $(git rev-parse HEAD) refs/heads/main $old')[0],
+            'a changelog added in the merge commit itself was not seen');
+
+        // An already-pushed changelog inherited through a merge of an older branch does not (-m would).
+        $inherited = 'printf base > a.php && git add a.php && git commit -q -m base && git branch side'
+            . ' && printf x > CHANGELOG.md && git add CHANGELOG.md && git commit -q -m cl && old=$(git rev-parse HEAD)'
+            . ' && printf o > o.php && git add o.php && git commit -q -m other'
+            . ' && git checkout -q side && printf f > f.php && git add f.php && git commit -q -m feature'
+            . ' && git checkout -q main && git merge -q --no-ff -m merge side';
+        self::assertSame(1, self::runHook($inherited, 'refs/heads/main $(git rev-parse HEAD) refs/heads/main $old')[0],
+            'merging an old branch made an already-pushed changelog count for a push that changes none');
+    }
+
+    public function testATagIsGatedOnlyWhenItIsHeadAndTheTreeIsClean(): void
+    {
+        $two = 'printf one > a.txt && git add a.txt && git commit -q -m one && first=$(git rev-parse HEAD)'
+            . ' && printf two >> a.txt && git commit -q -am two';
+
+        [$status, $err] = self::runHook($two, 'refs/tags/v9.9.9 $first refs/tags/v9.9.9 ' . self::Z40);
+        self::assertSame(1, $status);
+        self::assertStringContainsString('points at', $err, 'a tag on an older commit was not refused as such');
+
+        [$status, $err] = self::runHook($two . ' && printf x > untracked.txt', 'refs/tags/v9.9.9 $(git rev-parse HEAD) refs/tags/v9.9.9 ' . self::Z40);
+        self::assertSame(1, $status);
+        self::assertStringContainsString('working tree has uncommitted', $err, 'a dirty tree was not refused');
+
+        [$status, $err] = self::runHook($two, 'refs/tags/v9.9.9 $(git rev-parse HEAD) refs/tags/v9.9.9 ' . self::Z40);
+        self::assertSame(1, $status);
+        self::assertStringContainsString('MAGENTO_ROOT', $err, 'CONTROL: a clean HEAD tag did not get past the HEAD and clean-tree checks');
+    }
+
+    public function testGateOutputGoesToAPrivatePerRunDirectory(): void
+    {
+        $code = self::executableLines((string) file_get_contents(self::root() . '/.githooks/pre-push'));
+        self::assertStringContainsString('mktemp -d', $code);
+        self::assertStringNotContainsString('/tmp/pre-push', $code, 'a gate logs to a fixed, predictable path under /tmp');
+        self::assertStringNotContainsString('xargs git diff-tree', $code, 'the M2MAP-656 line is back');
+    }
+
+    private const Z40 = '0000000000000000000000000000000000000000';
+
+    /**
+     * @param string $setup shell run inside a fresh repository on branch main
+     * @param string $stdinLine the pre-push stdin line; may reference shell variables from $setup
+     * @return array{0: int, 1: string} exit status and stderr of the hook (MAGENTO_ROOT unset)
+     */
+    private static function runHook(string $setup, string $stdinLine): array
+    {
+        $dir = sys_get_temp_dir() . '/pp-hook-' . bin2hex(random_bytes(6));
+        $err = $dir . '.err';
+        $script = implode("\n", [
+            'set -e',
+            'mkdir -p ' . escapeshellarg($dir),
+            'cd ' . escapeshellarg($dir),
+            'git init -q -b main .',
+            'git config user.email gate@example.test',
+            'git config user.name gate',
+            $setup,
+            'set +e',
+            'printf "%s\n" "' . $stdinLine . '" | env -u MAGENTO_ROOT bash '
+                . escapeshellarg(self::root() . '/.githooks/pre-push') . ' >/dev/null 2>' . escapeshellarg($err),
+            'status=$?',
+            'cd /',
+            'rm -rf ' . escapeshellarg($dir),
+            'exit $status',
+        ]);
+
+        $out = [];
+        $status = 0;
+        exec('bash -c ' . escapeshellarg($script), $out, $status);
+        $stderr = '';
+        if (is_file($err)) {
+            $stderr = (string) file_get_contents($err);
+            unlink($err);
+        }
+
+        return [$status, $stderr];
+    }
 }

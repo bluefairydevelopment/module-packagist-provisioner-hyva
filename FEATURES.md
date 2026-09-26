@@ -54,7 +54,8 @@ Hyvä form posts as JSON and renders the result in place:
 > **Neither package links this page — the merchant must surface it.** No navigation item, footer
 > link or block in either package points at it, so out of the box the base package's credentials
 > and notification emails are a customer's only route to it. See the base package's README under
-> *Guest Credential Retrieval* (M2MAP-653).
+> *Guest Credential Retrieval* (M2MAP-653): put the link in the footer, and verify it on the rendered
+> storefront page, not by checking that a CMS block exists (M2MAP-655).
 
 
 ![The guest lookup form](docs/images/guest-lookup.png)

@@ -4,11 +4,14 @@
 #
 # TWO JOBS, and both of them can refuse a push:
 #
-#   1. A BRANCH push must carry a CHANGELOG.md change. (Since 1.1.0; tags are
+#   1. A BRANCH push that brings new commits must carry a CHANGELOG.md change,
+#      read from every new commit's own files (M2MAP-656). (Since 1.1.0; tags are
 #      skipped here because a tag names a commit already on the branch, so the
 #      "new commits" query is empty and this rule rejected every tag push.)
 #
-#   2. A TAG push must pass the package's own gates FIRST. M2MAP-594 / M2MAP-546:
+#   2. A TAG push must pass the package's own gates FIRST - and every tag pushed
+#      must name HEAD with a clean working tree, because the gates read the working
+#      tree and a tag on any other commit would publish bytes nobody measured. M2MAP-594 / M2MAP-546:
 #      before this, the only check between a red suite and a published tag was
 #      the CHANGELOG heading - product-grid-export v1.0.6 was tagged with its own
 #      regression test red. Now phpunit, phpcs, phpstan and `composer validate`
@@ -39,30 +42,54 @@ set -u
 z40=0000000000000000000000000000000000000000
 has_commits=false
 changelog_updated=false
-tag_pushed=""
+tags_pushed=""
+tag_shas=""
 
 while read -r local_ref local_sha remote_ref remote_sha; do
     [ "$local_sha" = "$z40" ] && continue
 
     case "$local_ref" in
         refs/tags/*)
-            tag_pushed="${local_ref#refs/tags/}"
+            # EVERY tag, not the last one read: `git push --tags` can carry several, each
+            # naming a different commit, and each is a release.
+            tags_pushed="${tags_pushed} ${local_ref#refs/tags/}"
+            tag_shas="${tag_shas} ${local_sha}"
             continue
             ;;
     esac
 
-    has_commits=true
+    # A remote sha this clone has never fetched cannot be diffed against. Treat it as a first
+    # push. KNOWN LIMIT: that falls back on this clone's remote-tracking refs, so stale fetch
+    # state can miscount which commits are new - `git fetch` first when this rule surprises you.
+    if [ "$remote_sha" != "$z40" ] && ! git cat-file -e "${remote_sha}^{commit}" 2>/dev/null; then
+        remote_sha=$z40
+    fi
 
+    # ONE diff-tree PER NEW COMMIT (M2MAP-656). This used to be
+    # `echo "$new_commits" | xargs git diff-tree --no-commit-id -r --name-only`, and given several
+    # commits at once diff-tree compares them against EACH OTHER - for a multi-commit first push
+    # it printed nothing, so the rule refused every such push with a changelog in it. It failed
+    # closed, which is why nobody reported it: a gate that refuses everything is learned around
+    # with --no-verify. On an existing branch it diffed only the two tips, so a commit and its
+    # revert in one push netted to nothing and slipped through. Flags, each load-bearing:
+    #   --root  a root commit has no parent and otherwise reports no files;
+    #   --cc    a merge commit otherwise reports none either; NOT -m, which lists a file changed
+    #           against ANY parent and lets an already-pushed changelog count again when an old
+    #           branch is merged (fail OPEN). --cc lists only what the merge itself introduced.
     if [ "$remote_sha" = "$z40" ]; then
         new_commits=$(git log --format="%H" "$local_sha" --not --remotes 2>/dev/null)
-        if [ -n "$new_commits" ]; then
-            changed=$(echo "$new_commits" | xargs git diff-tree --no-commit-id -r --name-only | sort -u)
-        else
-            changed=""
-        fi
     else
-        changed=$(git diff --name-only "$remote_sha" "$local_sha")
+        new_commits=$(git rev-list "${remote_sha}..${local_sha}")
     fi
+    # A branch pointing at commits the remote already has carries nothing to log.
+    [ -z "$new_commits" ] && continue
+
+    has_commits=true
+    changed=""
+    for c in $new_commits; do
+        changed="${changed}$(git diff-tree --cc --no-commit-id -r --root --name-only "$c")
+"
+    done
 
     if echo "$changed" | grep -q "^CHANGELOG.md$"; then
         changelog_updated=true
@@ -77,9 +104,32 @@ if $has_commits && ! $changelog_updated; then
     exit 1
 fi
 
-if [ -n "$tag_pushed" ]; then
+if [ -n "$tags_pushed" ]; then
     root="$(git rev-parse --show-toplevel)"
     cd "$root" || exit 1
+
+    # THE GATES RUN ON THE WORKING TREE, so the working tree must BE the commit being tagged.
+    # Without this, tagging an older commit - or tagging with an uncommitted fix on disk - ran
+    # every gate against bytes the tag does not contain. An annotated tag's sha is the tag
+    # object, hence ^{commit}. (Found in review of module-order-comments 1.1.1.)
+    head=$(git rev-parse HEAD)
+    for sha in $tag_shas; do
+        target=$(git rev-parse "${sha}^{commit}" 2>/dev/null)
+        if [ "$target" != "$head" ]; then
+            echo "" >&2
+            echo "  Tag push refused: a tag points at ${target:-an unknown object}, but HEAD is ${head}." >&2
+            echo "  The gates measure the working tree. Check out the commit you are tagging and retry." >&2
+            echo "" >&2
+            exit 1
+        fi
+    done
+    if [ -n "$(git status --porcelain)" ]; then
+        echo "" >&2
+        echo "  Tag push refused: the working tree has uncommitted or untracked changes." >&2
+        echo "  The gates would measure them and the tag would not contain them. Commit or stash, then retry." >&2
+        echo "" >&2
+        exit 1
+    fi
 
     if [ -z "${MAGENTO_ROOT:-}" ] || [ ! -f "${MAGENTO_ROOT}/vendor/bin/phpunit" ]; then
         echo "" >&2
@@ -89,15 +139,21 @@ if [ -n "$tag_pushed" ]; then
         exit 1
     fi
 
-    echo "pre-push: running the release gates for tag ${tag_pushed} against ${MAGENTO_ROOT}" >&2
+    echo "pre-push: running the release gates for tag(s)${tags_pushed} against ${MAGENTO_ROOT}" >&2
+
+    # One private directory per run for the logs and phpstan's cache. Fixed names under /tmp
+    # were predictable - another local user could plant a symlink there. A fresh cache per run
+    # also stops phpstan replaying another MAGENTO_ROOT's verdict (its cache ignores the root).
+    run_dir=$(mktemp -d "${TMPDIR:-/tmp}/packagist-provisioner-pre-push.XXXXXX") || exit 1
+    mkdir "$run_dir/phpstan" || exit 1
 
     gate() {
         local name="$1"; shift
-        "$@" >/tmp/pre-push-"$name".log 2>&1
+        "$@" >"$run_dir/$name.log" 2>&1
         local status=$?
         if [ "$status" -ne 0 ]; then
             echo "" >&2
-            echo "  Tag push refused: ${name} exited ${status}. Log: /tmp/pre-push-${name}.log" >&2
+            echo "  Tag push refused: ${name} exited ${status}. Log: $run_dir/${name}.log" >&2
             echo "  A tag is a release. Fix it, or do not tag it." >&2
             echo "" >&2
             exit "$status"
@@ -108,7 +164,10 @@ if [ -n "$tag_pushed" ]; then
     gate composer-validate composer validate --no-check-publish --quiet
     gate phpunit env MAGENTO_ROOT="$MAGENTO_ROOT" "$MAGENTO_ROOT/vendor/bin/phpunit" -c phpunit.xml.dist
     gate phpcs "$MAGENTO_ROOT/vendor/bin/phpcs" --standard=phpcs.xml.dist --warning-severity=0 -q .
-    gate phpstan env MAGENTO_ROOT="$MAGENTO_ROOT" "$MAGENTO_ROOT/vendor/bin/phpstan" analyse --no-progress --memory-limit=2G
+    gate phpstan env MAGENTO_ROOT="$MAGENTO_ROOT" TMPDIR="$run_dir/phpstan" "$MAGENTO_ROOT/vendor/bin/phpstan" analyse --no-progress --memory-limit=2G
+
+    # Kept on failure (the refusal names the log); nothing to read on success.
+    rm -rf "$run_dir"
 fi
 
 exit 0
