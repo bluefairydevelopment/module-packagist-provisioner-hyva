@@ -148,7 +148,26 @@ class TheReleaseGateIsArmedTest extends TestCase
         self::assertSame(1, self::runHook($setup, 'refs/heads/main $(git rev-parse HEAD) refs/heads/main $old')[0],
             'a commit and its revert on an existing branch slipped past the changelog rule');
         self::assertSame(0, self::runHook($setup . ' && printf x > CHANGELOG.md && git add CHANGELOG.md && git commit -q -m cl',
-            'refs/heads/main $(git rev-parse HEAD) refs/heads/main $old')[0], 'CONTROL: the same push with a changelog was refused');
+            'refs/heads/main $(git rev-parse HEAD) refs/heads/main $old')[0], 'CONTROL: the same push with a changelog was not accepted');
+    }
+
+    /**
+     * The fail-OPEN shape a per-commit "touched" test alone allows (review of 1.2.2): one commit
+     * adds a changelog entry, a later one reverts just that, and the push lands with no changelog
+     * change in its final tree. Refused on an existing branch and on a first push alike.
+     */
+    public function testAChangelogAddedAndRevertedInOnePushDoesNotCount(): void
+    {
+        $existing = 'printf base > a.php && printf v1 > CHANGELOG.md && git add -A && git commit -q -m base && old=$(git rev-parse HEAD)'
+            . ' && printf feat > f.php && printf v2 > CHANGELOG.md && git add -A && git commit -q -m feature'
+            . ' && printf v1 > CHANGELOG.md && git commit -q -am "revert changelog only"';
+        self::assertSame(1, self::runHook($existing, 'refs/heads/main $(git rev-parse HEAD) refs/heads/main $old')[0],
+            'an added-then-reverted changelog satisfied the rule on an existing branch');
+
+        $first = 'printf a > a.php && printf x > CHANGELOG.md && git add -A && git commit -q -m a'
+            . ' && git rm -q CHANGELOG.md && git commit -q -m "drop changelog"';
+        self::assertSame(1, self::runHook($first, 'refs/heads/main $(git rev-parse HEAD) refs/heads/main ' . self::Z40)[0],
+            'an added-then-deleted changelog satisfied the rule on a first push');
     }
 
     public function testAMergeCountsOnlyWhatItIntroduces(): void
