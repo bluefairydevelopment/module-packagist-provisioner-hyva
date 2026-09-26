@@ -170,6 +170,36 @@ class TheReleaseGateIsArmedTest extends TestCase
             'an added-then-deleted changelog satisfied the rule on a first push');
     }
 
+    /**
+     * The first-push BOUNDARY path, against a real remote with fetched refs (review round 2 of
+     * 1.2.2): a new branch cut from an already-pushed trunk is compared with the trunk tip that
+     * `git rev-list --boundary ... --not --remotes` finds. A changelog entry that is added then
+     * reverted on the new branch is refused, a real one accepted, and one deleted outright is
+     * refused because the pushed tree no longer carries a changelog.
+     */
+    public function testAFirstPushIsComparedWithTheRemoteBoundary(): void
+    {
+        $remote = 'git init -q --bare .git/test-remote && git remote add origin "$PWD/.git/test-remote"'
+            . ' && printf v1 > CHANGELOG.md && printf a > a.php && git add -A && git commit -q -m base'
+            . ' && git push -q origin main 2>/dev/null && git fetch -q origin && git checkout -q -b topic';
+
+        $roundTrip = $remote . ' && printf v2 > CHANGELOG.md && printf f > f.php && git add -A && git commit -q -m f'
+            . ' && printf v1 > CHANGELOG.md && git commit -q -am revert';
+        self::assertSame(1, self::runHook($roundTrip,
+            'refs/heads/topic $(git rev-parse HEAD) refs/heads/topic ' . self::Z40)[0],
+            'a first push whose changelog matches the remote boundary was accepted');
+
+        $real = $remote . ' && printf v2 > CHANGELOG.md && git commit -q -am entry';
+        self::assertSame(0, self::runHook($real,
+            'refs/heads/topic $(git rev-parse HEAD) refs/heads/topic ' . self::Z40)[0],
+            'CONTROL: a first push with a real changelog change against the boundary was refused');
+
+        $deleted = $remote . ' && git rm -q CHANGELOG.md && git commit -q -m drop';
+        self::assertSame(1, self::runHook($deleted,
+            'refs/heads/topic $(git rev-parse HEAD) refs/heads/topic ' . self::Z40)[0],
+            'deleting the changelog satisfied the rule');
+    }
+
     public function testAMergeCountsOnlyWhatItIntroduces(): void
     {
         // A changelog written while resolving the merge counts (--cc sees it; no flag would not).

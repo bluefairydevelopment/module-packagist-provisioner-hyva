@@ -52,19 +52,20 @@ tag_shas=""
 # boundaries, not any, for the same reason merges are read with --cc.
 changelog_paths="CHANGELOG.md"
 changelog_differs() {
-    local tip="$1" remote="$2" bounds b p
+    local tip="$1" remote="$2" bounds b p present=false
+    # A changelog deleted or renamed away also "differs" from the remote - and leaves none. So the
+    # pushed tree must still carry one.
+    for p in $changelog_paths; do
+        git cat-file -e "${tip}:${p}" 2>/dev/null && present=true
+    done
+    $present || return 1
     if [ "$remote" != "$z40" ]; then
         bounds="$remote"
     else
         bounds=$(git rev-list --boundary "$tip" --not --remotes 2>/dev/null | sed -n 's/^-//p')
     fi
-    if [ -z "$bounds" ]; then
-        # Nothing on the remote at all: the changelog is new iff it exists at the tip.
-        for p in $changelog_paths; do
-            git cat-file -e "${tip}:${p}" 2>/dev/null && return 0
-        done
-        return 1
-    fi
+    # Nothing on the remote at all: the changelog is new because it exists at the tip.
+    [ -z "$bounds" ] && return 0
     for b in $bounds; do
         # shellcheck disable=SC2086
         git diff --quiet "$b" "$tip" -- $changelog_paths && return 1

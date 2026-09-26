@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The pre-push release gate carries the same M2MAP-656 cure as the base package: it reads every new
   commit's own files, so a multi-commit first push with a changelog is no longer refused. Every pushed
-  tag must be `HEAD` with a clean tree, and logs go to a private directory. Run in throwaway
+  tag must be `HEAD` with a clean tree, and logs go to a private directory. The changelog must differ from the remote in the pushed tree and still exist there. Run in throwaway
   repositories by `TheReleaseGateIsArmedTest` (M2MAP-656)
 
 ## [1.2.1] - 2026-09-19
