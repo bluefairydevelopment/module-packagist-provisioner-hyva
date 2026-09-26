@@ -40,8 +40,10 @@
 set -u
 
 z40=0000000000000000000000000000000000000000
-has_commits=false
-changelog_updated=false
+# Branches whose new commits carry no changelog change, judged ONE REF AT A TIME. This was a pair of
+# flags OR'd across the whole push, so `git push origin a b` landed b with no changelog as long as
+# a had one - one branch vouched for another (review round 3 of module-packagist-provisioner 1.2.2).
+unlogged=""
 tags_pushed=""
 tag_shas=""
 
@@ -112,22 +114,22 @@ while read -r local_ref local_sha remote_ref remote_sha; do
     # A branch pointing at commits the remote already has carries nothing to log.
     [ -z "$new_commits" ] && continue
 
-    has_commits=true
     changed=""
     for c in $new_commits; do
         changed="${changed}$(git diff-tree --cc --no-commit-id -r --root --name-only "$c")
 "
     done
 
-    if echo "$changed" | grep -q "^CHANGELOG.md$" \
-        && changelog_differs "$local_sha" "$remote_sha"; then
-        changelog_updated=true
+    if ! { echo "$changed" | grep -q "^CHANGELOG.md$" \
+        && changelog_differs "$local_sha" "$remote_sha"; }; then
+        unlogged="${unlogged} ${local_ref#refs/heads/}"
     fi
 done
 
-if $has_commits && ! $changelog_updated; then
+if [ -n "$unlogged" ]; then
     echo "" >&2
     echo "  Push rejected: CHANGELOG.md has not been updated." >&2
+    echo "  Branch(es) with new commits and no changelog change:${unlogged}" >&2
     echo "  Add an entry to CHANGELOG.md and commit it before pushing." >&2
     echo "" >&2
     exit 1

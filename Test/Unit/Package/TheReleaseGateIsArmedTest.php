@@ -239,6 +239,24 @@ class TheReleaseGateIsArmedTest extends TestCase
         self::assertStringContainsString('MAGENTO_ROOT', $err, 'CONTROL: a clean HEAD tag did not get past the HEAD and clean-tree checks');
     }
 
+    public function testEachBranchOfAMultiBranchPushNeedsItsOwnChangelog(): void
+    {
+        // `git push origin a b` sends one stdin line per branch. The verdict was a pair of flags
+        // OR'd across the push, so a's changelog let b land with none (review round 3 of 1.2.2).
+        $setup = 'printf v1 > CHANGELOG.md && git add -A && git commit -q -m base && old=$(git rev-parse HEAD)'
+            . ' && git checkout -q -b a && printf v2 > CHANGELOG.md && git commit -q -am entry && a=$(git rev-parse HEAD)'
+            . ' && git checkout -q -b b $old && printf x > b.php && git add b.php && git commit -q -m code && b=$(git rev-parse HEAD)';
+        $a = 'refs/heads/a $a refs/heads/a $old';
+        $b = 'refs/heads/b $b refs/heads/b $old';
+
+        foreach (['a then b' => $a . "\n" . $b, 'b then a' => $b . "\n" . $a] as $order => $lines) {
+            [$status, $err] = self::runHook($setup, $lines);
+            self::assertSame(1, $status, "a branch with no changelog rode along with one that has it ({$order})");
+            self::assertStringContainsString('change: b', $err, "the refusal does not name branch b ({$order})");
+        }
+        self::assertSame(0, self::runHook($setup, $a)[0], 'CONTROL: branch a alone, with its changelog, was refused');
+    }
+
     public function testEveryTagOfAMultiTagPushIsChecked(): void
     {
         // `git push --tags` carries several refs. The 1.2.1 hook kept only the LAST tag it read,
