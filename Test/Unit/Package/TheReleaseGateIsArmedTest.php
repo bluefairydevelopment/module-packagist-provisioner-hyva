@@ -239,6 +239,20 @@ class TheReleaseGateIsArmedTest extends TestCase
         self::assertStringContainsString('MAGENTO_ROOT', $err, 'CONTROL: a clean HEAD tag did not get past the HEAD and clean-tree checks');
     }
 
+    public function testEveryTagOfAMultiTagPushIsChecked(): void
+    {
+        // `git push --tags` carries several refs. The 1.2.1 hook kept only the LAST tag it read,
+        // so an older commit's tag listed first went out ungated (M2MAP-672).
+        $two = 'printf one > a.txt && git add a.txt && git commit -q -m one && first=$(git rev-parse HEAD)'
+            . ' && printf two >> a.txt && git commit -q -am two';
+        $lines = 'refs/tags/v9.9.8 $first refs/tags/v9.9.8 ' . self::Z40 . "\n"
+            . 'refs/tags/v9.9.9 $(git rev-parse HEAD) refs/tags/v9.9.9 ' . self::Z40;
+
+        [$status, $err] = self::runHook($two, $lines);
+        self::assertSame(1, $status);
+        self::assertStringContainsString('points at', $err, 'an older tag listed before a HEAD tag was not refused');
+    }
+
     public function testGateOutputGoesToAPrivatePerRunDirectory(): void
     {
         $code = self::executableLines((string) file_get_contents(self::root() . '/.githooks/pre-push'));

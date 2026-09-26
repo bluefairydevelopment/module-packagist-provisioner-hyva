@@ -18,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   commit's own files, so a multi-commit first push with a changelog is no longer refused. Every pushed
   tag must be `HEAD` with a clean tree, and logs go to a private directory. The changelog must differ from the remote in the pushed tree and still exist there. Run in throwaway
   repositories by `TheReleaseGateIsArmedTest` (M2MAP-656)
+- The release gate's M2MAP-672 cure, as in the base package: logs go to a private per-run
+  directory instead of fixed `/tmp` paths, and every tag of a multi-tag push is checked against
+  `HEAD`, pinned by `testEveryTagOfAMultiTagPushIsChecked` (M2MAP-672)
 
 ## [1.2.1] - 2026-09-19
 
