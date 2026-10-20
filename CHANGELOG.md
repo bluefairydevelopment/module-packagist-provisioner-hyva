@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `FEATURES.md` points to the footer as the place for the guest-lookup link, and says to verify it on
   the rendered storefront page (M2MAP-655)
 
+### Tests
+
+- The checks that run before a release no longer inherit the git environment of the push that starts them. No change to the module.
+
 ## [1.2.1] - 2026-09-19
 
 ### Fixed

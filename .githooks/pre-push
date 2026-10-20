@@ -172,6 +172,10 @@ if [ -n "$tags_pushed" ]; then
 
     echo "pre-push: running the release gates for tag(s)${tags_pushed} against ${MAGENTO_ROOT}" >&2
 
+    # The gates run this package's own tests, which build throwaway git repositories; the GIT_DIR git
+    # sets for a hook would point their git commands back at this repository and commit into it.
+    unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_PREFIX
+
     # One private directory per run for the logs and phpstan's cache. Fixed names under /tmp
     # were predictable - another local user could plant a symlink there. A fresh cache per run
     # also stops phpstan replaying another MAGENTO_ROOT's verdict (its cache ignores the root).
