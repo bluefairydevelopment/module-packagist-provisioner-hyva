@@ -7,25 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.2] - 2026-10-20
+
 ### Fixed
 
 - `FEATURES.md` points to the footer as the place for the guest-lookup link, and says to verify it on
   the rendered storefront page (M2MAP-655)
-
-### Internal (not in the published package)
-
-- The pre-push release gate carries the same M2MAP-656 cure as the base package: it reads every new
-  commit's own files, so a multi-commit first push with a changelog is no longer refused. Every pushed
-  tag must be `HEAD` with a clean tree, and logs go to a private directory. The changelog must differ from the remote in the pushed tree and still exist there. Run in throwaway
-  repositories by `TheReleaseGateIsArmedTest` (M2MAP-656)
-- The release gate's M2MAP-672 cure, as in the base package: logs go to a private per-run
-  directory instead of fixed `/tmp` paths, and every tag of a multi-tag push is checked against
-  `HEAD`, pinned by `testEveryTagOfAMultiTagPushIsChecked` (M2MAP-672)
-- **Each branch of a multi-branch push needs its own changelog change** (review round 3). The
-  verdict was a pair of flags OR'd across the push, so `git push origin a b` landed `b` with no
-  changelog as long as `a` had one. Each branch is now judged on its own, and the refusal names the
-  branches that failed. `testEachBranchOfAMultiBranchPushNeedsItsOwnChangelog` fails against the
-  previous hook
 
 ## [1.2.1] - 2026-09-19
 

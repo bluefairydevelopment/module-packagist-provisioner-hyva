@@ -16,6 +16,7 @@ use Magento\Customer\Model\Session;
 use BlueFairy\PackagistProvisioner\Model\TokenReleaseService;
 use Magento\Framework\Encryption\EncryptorInterface;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -99,6 +100,7 @@ class LicenceListViewModelTest extends TestCase
     /**
      * @dataProvider nonActiveStatuses
      */
+    #[DataProvider('nonActiveStatuses')]
     public function testOnlyAnActiveLicenceYieldsAToken(string $status): void
     {
         $this->givenCustomerHas([$this->licence($status, 'ciphertext')]);
@@ -135,6 +137,7 @@ class LicenceListViewModelTest extends TestCase
      *
      * @dataProvider allStatuses
      */
+    #[DataProvider('allStatuses')]
     public function testExactlyOneStatusPredicateAnswersTrueForAnyStatus(string $status): void
     {
         $licence = $this->licence($status, null);
