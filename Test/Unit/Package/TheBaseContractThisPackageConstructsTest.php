@@ -11,6 +11,7 @@ namespace BlueFairy\PackagistProvisionerHyva\Test\Unit\Package;
 use BlueFairy\PackagistProvisioner\Model\Auth\StepUpSession;
 use BlueFairy\PackagistProvisioner\Model\GuestLookupService;
 use BlueFairy\PackagistProvisioner\Model\TokenReleaseService;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -48,6 +49,7 @@ class TheBaseContractThisPackageConstructsTest extends TestCase
      * @param class-string $class
      * @param list<string> $paramTypes
      */
+    #[DataProvider('contract')]
     public function testTheBaseStillHonoursTheSignatureThisPackageCalls(string $class, string $method, array $paramTypes, string $return): void
     {
         $ref = new \ReflectionMethod($class, $method);

@@ -19,6 +19,7 @@ use Magento\Framework\Encryption\EncryptorInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use Magento\Framework\Registry;
 use Magento\Sales\Api\Data\OrderInterface;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -99,6 +100,7 @@ class OrderLicenceViewModelTest extends TestCase
      *
      * @dataProvider nonActiveStatuses
      */
+    #[DataProvider('nonActiveStatuses')]
     public function testOnlyAnActiveLicenceYieldsAToken(string $status): void
     {
         $this->licenceRepository->method('getByOrderId')
