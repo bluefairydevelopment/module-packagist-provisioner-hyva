@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **This package is now free and open source, under the MIT licence.** `LICENSE.txt` is the MIT licence and `composer.json` declares `MIT`. Nothing in the code changes. The base module it extends keeps its own licence.
+- **This package is now free and open source, under the MIT licence.** `LICENSE.txt` is the MIT licence and `composer.json` declares `MIT`. The base module it extends keeps its own licence.
+- **Requires the base module 1.2.4 or later.** The dashboard's licence expiry dates are formatted through this package's view model, using the base module's injected formatter; dates read exactly as before.
 
 ## [1.2.2] - 2026-10-20
 
