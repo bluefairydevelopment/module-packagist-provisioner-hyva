@@ -57,7 +57,8 @@ class LicenceListViewModelTest extends TestCase
             // behaviour, which now live in the service - mocking it would leave
             // them asserting nothing.
             new TokenReleaseService($this->encryptor),
-            $this->stepUpSession
+            $this->stepUpSession,
+            new \BlueFairy\PackagistProvisioner\Model\ExpiryDate()
         );
     }
 
@@ -249,7 +250,8 @@ class LicenceListViewModelTest extends TestCase
             // behaviour, which now live in the service - mocking it would leave
             // them asserting nothing.
             new TokenReleaseService($this->encryptor),
-            $stepUp
+            $stepUp,
+            new \BlueFairy\PackagistProvisioner\Model\ExpiryDate()
         );
     }
 

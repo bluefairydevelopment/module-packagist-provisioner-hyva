@@ -11,6 +11,7 @@ namespace BlueFairy\PackagistProvisionerHyva\ViewModel;
 use BlueFairy\PackagistProvisioner\Api\Data\LicenceInterface;
 use BlueFairy\PackagistProvisioner\Api\LicenceRepositoryInterface;
 use BlueFairy\PackagistProvisioner\Model\Auth\StepUpSession;
+use BlueFairy\PackagistProvisioner\Model\ExpiryDate;
 use Magento\Customer\Model\Session;
 use BlueFairy\PackagistProvisioner\Model\TokenReleaseService;
 use Magento\Framework\View\Element\Block\ArgumentInterface;
@@ -22,6 +23,7 @@ class LicenceListViewModel implements ArgumentInterface
      * @param LicenceRepositoryInterface $licenceRepository
      * @param TokenReleaseService $tokenRelease
      * @param StepUpSession $stepUpSession
+     * @param ExpiryDate $expiryDate
      */
     public function __construct(
         private readonly Session $customerSession,
@@ -30,8 +32,20 @@ class LicenceListViewModel implements ArgumentInterface
         // M2MAP-260. The base package refuses to show a token until the customer
         // re-enters their password; this block sits on the account dashboard,
         // which is not behind that gate, so it has to ask for itself.
-        private readonly StepUpSession $stepUpSession
+        private readonly StepUpSession $stepUpSession,
+        private readonly ExpiryDate $expiryDate
     ) {
+    }
+
+    /**
+     * An expiry date as every customer surface shows it ("17 Sep 2027"), through the base package's formatter.
+     *
+     * @param string|null $dateString
+     * @return string
+     */
+    public function formatExpiry(?string $dateString): string
+    {
+        return $this->expiryDate->format($dateString);
     }
 
     /**

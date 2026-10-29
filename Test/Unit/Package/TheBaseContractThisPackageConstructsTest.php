@@ -89,7 +89,7 @@ class TheBaseContractThisPackageConstructsTest extends TestCase
             'Api\\LicenceRepositoryInterface'       => '1.0.0',
             'Model\\Auth\\StepUpSession'            => '1.1.0',
             'Model\\Config'                         => '1.0.0',
-            'Model\\ExpiryDate'                     => '1.2.0',
+            'Model\\ExpiryDate'                     => '1.2.4',
             'Model\\GuestLookupService'             => '1.1.0',
             'Model\\TokenReleaseService'            => '1.1.0',
             'ViewModel\\Account\\LicencesViewModel' => '1.0.0',
@@ -192,7 +192,10 @@ class TheBaseContractThisPackageConstructsTest extends TestCase
         );
         $raw = $composer['require']['bluefairy/module-packagist-provisioner'] ?? '';
 
-        return preg_match('/(\d+)\.(\d+)/', $raw, $m) ? $m[1] . '.' . $m[2] . '.0' : '';
+        // The patch counts: "^1.2.4" is a floor of 1.2.4, not 1.2.0.
+        return preg_match('/(\d+)\.(\d+)(?:\.(\d+))?/', $raw, $m)
+            ? $m[1] . '.' . $m[2] . '.' . ($m[3] ?? '0')
+            : '';
     }
 
     /** @return string[] */

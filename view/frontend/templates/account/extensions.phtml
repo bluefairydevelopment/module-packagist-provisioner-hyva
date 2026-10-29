@@ -3,7 +3,6 @@
 use BlueFairy\PackagistProvisioner\ViewModel\SupportContact;
 use BlueFairy\PackagistProvisionerHyva\ViewModel\LicenceListViewModel;
 use BlueFairy\PackagistProvisioner\Api\Data\LicenceInterface;
-use BlueFairy\PackagistProvisioner\Model\ExpiryDate;
 use Magento\Framework\Escaper;
 use Magento\Framework\View\Element\Template;
 
@@ -57,7 +56,7 @@ $licences = $viewModel->getLicences();
                                 <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
                                     <?= $escaper->escapeHtml(__('Active')) ?>
                                     <?php if ($licence->getExpiresAt()): ?>
-                                        &middot; <?= $escaper->escapeHtml(__('Expires %1', ExpiryDate::format($licence->getExpiresAt()))) ?>
+                                        &middot; <?= $escaper->escapeHtml(__('Expires %1', $viewModel->formatExpiry($licence->getExpiresAt()))) ?>
                                     <?php else: ?>
                                         &middot; <?= $escaper->escapeHtml(__('Lifetime')) ?>
                                     <?php endif; ?>
