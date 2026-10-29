@@ -1,192 +1,21 @@
-BLUE FAIRY DEVELOPMENT LLC
-END USER LICENSE AGREEMENT
+MIT License
 
-Packagist Provisioner for Hyvä for Adobe Commerce and Magento Open Source
-Version 1.2.2
+Copyright (c) 2026 Blue Fairy Development LLC
 
-Copyright (c) Blue Fairy Development LLC, a Texas limited liability company.
-All rights reserved.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-This is commercial software. It is licensed, not sold. If you have not
-purchased a license from Blue Fairy Development LLC or from an authorized
-reseller, you have no right to install, copy or use it.
-
---------------------------------------------------------------------------
-1. DEFINITIONS
---------------------------------------------------------------------------
-
-"Licensor" means Blue Fairy Development LLC.
-
-"Software" means the Packagist Provisioner for Hyvä extension for Adobe
-Commerce and Magento Open Source, comprising the package
-BlueFairy_PackagistProvisionerHyva, a companion to BlueFairy_PackagistProvisioner
-which is licensed separately, together with its documentation and any updates
-supplied under this Agreement.
-
-"Licensee" means the individual or legal entity that purchased the license,
-or on whose behalf an authorized reseller purchased it.
-
-"Production Installation" means a Magento installation that serves live
-traffic or processes real orders.
-
-"Non-Production Installation" means a staging, development, testing,
-continuous-integration or disaster-recovery copy that does not serve live
-traffic and does not process real orders.
-
-"Reseller" means an agency, integrator or consultant engaged by the Licensee,
-or authorized by the Licensor to resell the Software. Each party acts as an
-independent contractor. Nothing in this Agreement creates a partnership, joint
-venture, agency, franchise or employment relationship between the Licensor and
-any Reseller or Licensee, and neither may bind or incur any obligation on
-behalf of the other.
-
---------------------------------------------------------------------------
-2. GRANT OF LICENSE
---------------------------------------------------------------------------
-
-Subject to payment of the applicable fee and to the terms of this Agreement,
-the Licensor grants the Licensee a non-exclusive, non-transferable,
-non-sublicensable, worldwide license to install and use the Software on:
-
-  (a) one Production Installation per license purchased; and
-  (b) any number of Non-Production Installations supporting that
-      Production Installation.
-
-The license is perpetual for the version supplied, and continues for any
-version supplied to the Licensee during an active update entitlement.
-
---------------------------------------------------------------------------
-3. DEPLOYMENT BY A RESELLER
---------------------------------------------------------------------------
-
-A Reseller may install, configure, customize and maintain the Software on the
-Licensee's installations on the Licensee's behalf. The license remains the
-Licensee's. A Reseller may not retain, reuse or redeploy the Software on any
-installation belonging to another client without a separate license for that
-client.
-
---------------------------------------------------------------------------
-4. RESTRICTIONS
---------------------------------------------------------------------------
-
-Except as this Agreement expressly permits, or as applicable law expressly
-permits notwithstanding this Agreement, the Licensee must not:
-
-  (a) distribute, publish, sell, rent, lease, lend, sublicense or otherwise
-      make the Software available to any third party;
-  (b) use the Software to provide a hosted or managed service in which the
-      Software's functionality is made available to parties other than the
-      Licensee;
-  (c) remove, obscure or alter any copyright, trademark or license notice in
-      the Software;
-  (d) reverse engineer, decompile or disassemble any part of the Software that
-      is supplied in a form that is not human-readable;
-  (e) use the Software beyond the number of Production Installations
-      licensed.
-
-The Software is supplied as source code. The Licensee may modify it for the
-Licensee's own use. Modified copies remain subject to this Agreement, are not
-supported by the Licensor, and may not be distributed.
-
---------------------------------------------------------------------------
-5. OWNERSHIP
---------------------------------------------------------------------------
-
-The Software is licensed, not sold. The Licensor retains all right, title and
-interest in and to the Software, including all intellectual property rights.
-The Licensee receives only the rights expressly granted in Section 2.
-
---------------------------------------------------------------------------
-6. UPDATES AND SUPPORT
---------------------------------------------------------------------------
-
-Updates and support are supplied on the terms of the Licensee's purchase or
-subscription, which are separate from this Agreement. Expiry of an update
-entitlement does not terminate the license to any version already supplied.
-
---------------------------------------------------------------------------
-7. TERM AND TERMINATION
---------------------------------------------------------------------------
-
-This Agreement takes effect when the Software is first installed or used and
-continues until terminated.
-
-The Licensor may terminate this Agreement if the Licensee materially breaches
-it and does not cure the breach within thirty (30) days of written notice.
-
-On termination the Licensee must cease all use of the Software and remove it
-from every installation. Sections 4, 5, 8, 9, 10 and 11 survive termination.
-
---------------------------------------------------------------------------
-8. THIRD-PARTY COMPONENTS AND SERVICES
---------------------------------------------------------------------------
-
-The Software, through the companion package it extends, integrates with
-Private Packagist, a service operated by
-Packagist Conductors GmbH, a third party, through that service's API. The
-Licensee supplies their own Private Packagist organization and API
-credentials; the Software creates, updates and revokes customer records
-and package access in that organization on the Licensee's behalf.
-The Licensor does not control that service and is not responsible for its
-availability, its behavior, changes to its interfaces, or any charge it
-makes. Use of that service is governed by the Licensee's agreement with its
-operator.
-
-Adobe Commerce, Magento, Hyvä, Packagist and Private Packagist are the
-trademarks of their owners. The Licensor is not affiliated with, endorsed by or sponsored by any
-of them.
-
---------------------------------------------------------------------------
-9. DISCLAIMER OF WARRANTIES
---------------------------------------------------------------------------
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. THE LICENSOR DOES NOT
-WARRANT THAT THE SOFTWARE WILL BE UNINTERRUPTED OR ERROR-FREE, OR THAT IT
-WILL OPERATE WITH ANY PARTICULAR CONFIGURATION OF MAGENTO, THEME OR THIRD-
-PARTY EXTENSION.
-
---------------------------------------------------------------------------
-10. LIMITATION OF LIABILITY
---------------------------------------------------------------------------
-
-TO THE MAXIMUM EXTENT PERMITTED BY LAW, THE LICENSOR SHALL NOT BE LIABLE FOR
-ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL OR EXEMPLARY DAMAGES, OR FOR
-ANY LOSS OF PROFITS, REVENUE, DATA OR GOODWILL, ARISING OUT OF OR RELATED TO
-THE SOFTWARE, HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY.
-
-THE LICENSOR'S TOTAL AGGREGATE LIABILITY ARISING OUT OF OR RELATED TO THIS
-AGREEMENT SHALL NOT EXCEED THE AMOUNT THE LICENSEE PAID FOR THE LICENSE IN
-THE TWELVE (12) MONTHS PRECEDING THE EVENT GIVING RISE TO THE CLAIM.
-
-NOTHING IN THIS AGREEMENT EXCLUDES OR LIMITS LIABILITY THAT CANNOT LAWFULLY
-BE EXCLUDED OR LIMITED.
-
---------------------------------------------------------------------------
-11. GENERAL
---------------------------------------------------------------------------
-
-Governing law. This Agreement is governed by the laws of the State of Texas,
-without regard to its conflict-of-laws rules. The state and federal courts
-located in Texas have exclusive jurisdiction, and each party consents to
-venue there.
-
-Assignment. The Licensee may not assign this Agreement without the Licensor's
-prior written consent, except to a successor to all or substantially all of
-the Licensee's business, on written notice.
-
-Severability. If any provision is held unenforceable, the remainder continues
-in force.
-
-Entire agreement. This Agreement is the entire agreement between the parties
-as to the Software, and supersedes any prior understanding as to its subject
-matter. It does not supersede a signed written agreement between the parties
-that expressly governs the Software.
-
---------------------------------------------------------------------------
-CONTACT
---------------------------------------------------------------------------
-
-Blue Fairy Development LLC
-https://bluefairydevelopment.com
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
