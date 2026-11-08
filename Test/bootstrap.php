@@ -19,6 +19,11 @@
  *
  * Which tree was used is reported in BFD_BASE_PACKAGE_SOURCE so a run can say
  * what it measured rather than leaving it to be inferred.
+ *
+ * FACTORY STAND-INS: under static analysis the bootstrap REFUSES
+ * when ANY imported Factory/Extension class is unresolved, whatever its
+ * namespace, names every one and prints the setup:di:compile fix. The unit
+ * suite still gets stand-ins, because it mocks these classes on purpose.
  */
 
 declare(strict_types=1);
@@ -182,6 +187,74 @@ function ppHyvaBootstrapShouldSynthesise(string $class, \Composer\Autoload\Class
     }
 
     return $loader->findFile($class) === false;
+}
+
+/**
+ * UNDER STATIC ANALYSIS, REFUSE OVER ANY UNRESOLVED FACTORY/EXTENSION IMPORT.
+ *
+ * The synthesiser below stands in an empty class for every *Factory, *Extension and
+ * *ExtensionInterface that neither composer nor generated/code can supply, and a
+ * stand-in factory's create() returns null. phpstan then stops checking everything
+ * downstream of it and exits 0. The namespace does not matter: on a Magento root with
+ * a sparse generated/code a MAGENTO factory this package imports (PageFactory,
+ * EavSetupFactory, RawFactory) is synthesised just the same.
+ * A run can print "1 unresolved" and still report 0 errors.
+ *
+ * So the analyser is refused when ANY imported Factory/Extension class is unresolved,
+ * whatever its namespace, and every one is named. The unit suite is not refused: it
+ * mocks these classes on purpose, so a stand-in there is the intended double. The
+ * denominator prints on every run, pass or fail.
+ */
+$m2map682Imports = [];
+$m2map682Unresolved = [];
+$m2map682Walk = new RecursiveIteratorIterator(new RecursiveCallbackFilterIterator(
+    new RecursiveDirectoryIterator(dirname(__DIR__), FilesystemIterator::SKIP_DOTS),
+    static fn (SplFileInfo $entry): bool => !$entry->isDir()
+        || !in_array($entry->getFilename(), ['Test', 'vendor', 'node_modules', '.git'], true)
+));
+foreach ($m2map682Walk as $m2map682Entry) {
+    if (!$m2map682Entry->isFile() || $m2map682Entry->getExtension() !== 'php') {
+        continue;
+    }
+    preg_match_all(
+        '/^use\s+\\\\?([A-Za-z0-9_\\\\]+(?:Factory|ExtensionInterface|Extension))(?:\s+as\s+\w+)?\s*;/m',
+        (string) file_get_contents($m2map682Entry->getPathname()),
+        $m2map682Matches
+    );
+    foreach ($m2map682Matches[1] as $m2map682Name) {
+        $m2map682Imports[$m2map682Name] = true;
+        if ($composerLoader->findFile($m2map682Name) === false
+            && !is_file(rtrim($generated, '/') . '/' . str_replace('\\', '/', $m2map682Name) . '.php')
+        ) {
+            $m2map682Unresolved[$m2map682Name] = true;
+        }
+    }
+}
+ksort($m2map682Unresolved);
+
+$m2map682UnderAnalysis = str_contains(strtolower((string) ($_SERVER['argv'][0] ?? '')), 'phpstan')
+    || class_exists('PHPStan\Analyser\Analyser', false);
+
+fwrite(STDERR, sprintf(
+    "factory-imports: %d Factory/Extension import(s) in shipped code, %d unresolved%s\n",
+    count($m2map682Imports),
+    count($m2map682Unresolved),
+    $m2map682UnderAnalysis ? ' [static analysis]' : ''
+));
+
+if ($m2map682Unresolved !== [] && $m2map682UnderAnalysis) {
+    fwrite(STDERR, sprintf(
+        "\nREFUSING to analyse: %d imported Factory/Extension class(es) cannot be resolved\n"
+        . "from composer or %s, and would be SYNTHESISED as empty stand-ins whose\n"
+        . "create() returns null - phpstan stops checking everything downstream and exits 0:\n  %s\n"
+        . "Fix:  cd %s && php -d memory_limit=-1 bin/magento setup:di:compile\n\n",
+        count($m2map682Unresolved),
+        $generated,
+        implode("\n  ", array_keys($m2map682Unresolved)),
+        $magentoRoot
+    ));
+    // phpcs:ignore Magento2.Security.LanguageConstruct -- a test bootstrap that refuses to run exits non-zero; the exit is the refusal
+    exit(1);
 }
 
 spl_autoload_register(static function (string $class) use ($composerLoader): void {
