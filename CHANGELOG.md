@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Documentation
+
+- The pre-push hook's header now says it is a client-side check only: `git push --no-verify`, an unwired clone or a tag made on GitHub bypass it. No change to the module.
+
 ## 1.2.3 — 2026-10-28
 
 ### Changed
