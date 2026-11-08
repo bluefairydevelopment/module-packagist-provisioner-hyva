@@ -36,6 +36,11 @@
 # test was planted, `git push <bare-remote> v0.0.0-control` was attempted, and
 # the push was refused with the phpunit exit code quoted. Re-run that control
 # whenever this file changes; a release gate never seen to refuse is untested.
+#
+# NOT A SERVER-SIDE CONTROL. `git push --no-verify`, an unwired clone, or a tag made in
+# GitHub's UI all bypass it, and branch/tag protection is not available on this repository's
+# plan (the protection and rulesets endpoints return 403). It stops the
+# honest mistake: tagging over a red suite without noticing.
 
 set -u
 
