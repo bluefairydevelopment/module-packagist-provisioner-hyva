@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Maintenance
 
-- tailwind.config.js now passes the estate ESLint and Prettier checks (M2MAP-921). No change to the built CSS.
+- tailwind.config.js now passes the ESLint and Prettier coding-standard checks. No change to the built CSS.
 
 ### Tests
 
