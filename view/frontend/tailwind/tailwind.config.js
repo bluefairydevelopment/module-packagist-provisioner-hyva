@@ -7,7 +7,5 @@
  * templates use the theme's own tokens, so no colours are added.
  */
 module.exports = {
-    content: [
-        '../templates/**/*.phtml',
-    ],
+    content: ['../templates/**/*.phtml']
 };

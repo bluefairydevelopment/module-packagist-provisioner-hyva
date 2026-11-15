@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Maintenance
+
+- tailwind.config.js now passes the ESLint and Prettier coding-standard checks. No change to the built CSS.
+
 ### Tests
 
 - The test bootstrap now refuses static analysis when any imported
